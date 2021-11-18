@@ -200,6 +200,14 @@ class Detekce(QMainWindow):
         labelfilter.setText("Learning speed")
         labelfilter.setGeometry(550,225,130,25)
 
+        labellenghtfil = QLabel(self)
+        labellenghtfil.setText("Filter lenght")
+        labellenghtfil.setGeometry(550, 175, 130, 25)
+
+        labelfilename = QLabel(self)
+        labelfilename.setText("Filename")
+        labelfilename.setGeometry(550, 275, 130, 25)
+
     def menugraf(self):
         opfil = QAction(QIcon("WWW.jpg"), "open", self)
         opfil.setShortcut("Ctrl+9")
@@ -211,7 +219,7 @@ class Detekce(QMainWindow):
         ofiltl.clicked.connect(self.loading)
 
         namfil = QPushButton("Save parametrs", self)
-        namfil.setGeometry(550, 360, 130, 25)
+        namfil.setGeometry(550, 330, 130, 25)
         namfil.clicked.connect(self.saveparametrs)
 
         grafil = QAction(QIcon("WWW.jpg"), "Graph filter", self)
@@ -288,26 +296,45 @@ class Detekce(QMainWindow):
             print(ex)
         self.statusBar().showMessage("Input column are selected")
     def uprava(self):
-        s = self.q
-        n = self.m[0]
+        try:
+            s = self.q
+            n = self.m[0]
 
-        x = []
-        d = []
+            sr = int(self.textbox3.text())
 
-        for i in range(5, n, 1):
-            d = np.append(d, s[i])
-        for i in range(0, n - 5, 1):
-            x = np.append(x, s[i])
-        l = np.asarray([x])
-        f = np.asarray([d])
-        self.x = l.T
-        self.d = f.T
+            x = []
+            d = []
+
+            for i in range(sr, n, 1):
+                d = np.append(d, s[i])
+            for i in range(0, n - sr, 1):
+                x = np.append(x, s[i])
+            l = np.asarray([x])
+            f = np.asarray([d])
+            self.x = l.T
+            self.d = f.T
+        except:
+            s = self.q
+            n = self.m[0]
+            x = []
+            d = []
+
+            for i in range(5, n, 1):
+                d = np.append(d, s[i])
+            for i in range(0, n - 5, 1):
+                x = np.append(x, s[i])
+            l = np.asarray([x])
+            f = np.asarray([d])
+            self.x = l.T
+            self.d = f.T
 
     def lspeed(self):
         self.textbox1 = QLineEdit(self)
         self.textbox1.setGeometry(550,250,130,25)
         self.textbox2 = QLineEdit(self)
-        self.textbox2.setGeometry(550,330,130,25)
+        self.textbox2.setGeometry(550,300,130,25)
+        self.textbox3 = QLineEdit(self)
+        self.textbox3.setGeometry(550, 200, 130, 25)
         self.show()
 
     def saveparametrs(self):
@@ -329,7 +356,7 @@ class Detekce(QMainWindow):
 
     def lspeedchoose(self):
         try:
-            speedvalue = int(self.textbox1.text())
+            speedvalue = float(self.textbox1.text())
             self.rl = speedvalue
         except:
             self.rl = 1
@@ -337,6 +364,7 @@ class Detekce(QMainWindow):
 
     def filterSSLMS(self):
         self.uprava()
+        self.nmf = "SSLMS"
         try:
             f = pa.filters.FilterSSLMS(n=1, mu=self.rl, w="zeros")
             y, e, w = f.run(self.d, self.x)
@@ -349,6 +377,7 @@ class Detekce(QMainWindow):
 
     def filterRLS(self):
         self.uprava()
+        self.nmf = "RLS"
         try:
             f = pa.filters.FilterRLS(n=1, mu=self.rl, w="zeros")
             y, e, w = f.run(self.d, self.x)
@@ -361,6 +390,7 @@ class Detekce(QMainWindow):
 
     def filterNSSLMS(self):
         self.uprava()
+        self.nmf = "NSSLMS"
         try:
             f = pa.filters.FilterNSSLMS(n=1, mu=self.rl, w="zeros")
             y, e, w = f.run(self.d, self.x)
@@ -373,6 +403,7 @@ class Detekce(QMainWindow):
 
     def filterAP(self):
         self.uprava()
+        self.nmf = "AP"
         try:
             f = pa.filters.FilterAP(n=1, mu=self.rl, w="zeros")
             y, e, w = f.run(self.d, self.x)
@@ -385,6 +416,7 @@ class Detekce(QMainWindow):
 
     def filterNLMS(self):
         self.uprava()
+        self.nmf = "NLMS"
         try:
             f = pa.filters.FilterNLMS(n=1, mu=self.rl, w="zeros")
             y, e, w = f.run(self.d, self.x)
@@ -410,6 +442,7 @@ class Detekce(QMainWindow):
 
     def filterNLMF(self):
         self.uprava()
+        self.nmf = "NLMF"
         try:
             f = pa.filters.FilterNLMF(n=1, mu=self.rl, w="zeros")
             y, e, w = f.run(self.d, self.x)
@@ -422,6 +455,7 @@ class Detekce(QMainWindow):
 
     def filterLMS(self):
         self.uprava()
+        self.nmf = "LMS"
         try:
             f = pa.filters.FilterLMS(n=1, mu=self.rl, w="zeros")
             y, e, w = f.run(self.d, self.x)
@@ -434,6 +468,7 @@ class Detekce(QMainWindow):
 
     def filterLMF(self):
         self.uprava()
+        self.nmf = "LMF"
         try:
             f = pa.filters.FilterLMF(n=1, mu=self.rl, w="zeros")
             y, e, w = f.run(self.d, self.x)
@@ -451,7 +486,7 @@ class Detekce(QMainWindow):
         self.statusBar().showMessage("ELBND detection aplicated")
 
     def detLE(self):
-
+        self.nmd = "LE"
         le = pa.detection.learning_entropy(self.w, m=30, order=1)
         self.det = le
         self.statusBar().showMessage("LE detection aplicated")
@@ -497,6 +532,16 @@ class Detekce(QMainWindow):
         axs[1].set_title("Output value")
         axs[2].set_title("History of all weights")
         axs[3].set_title("Detection values")
+
+        axs[0].set_xlabel("$k [-]$")
+        axs[1].set_xlabel("$k [-]$")
+        axs[2].set_xlabel("$k [-]$")
+        axs[3].set_xlabel("$k [-]$")
+
+        axs[0].set_ylabel("$e [-]$")
+        axs[1].set_ylabel("$y [-]$")
+        axs[2].set_ylabel("$w [-]$")
+        axs[3].set_ylabel("$det [-]$")
 
         axs[0].grid(True)
         axs[1].grid(True)
