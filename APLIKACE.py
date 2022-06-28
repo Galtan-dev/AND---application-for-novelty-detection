@@ -1,20 +1,14 @@
+import statistics
 import sys
-from PyQt5.QtWidgets import (QTableWidget,QTableWidgetItem, QWidget, QApplication, QInputDialog, QLineEdit, QFileDialog, QHBoxLayout, QVBoxLayout, QLabel, QFileDialog, QTextEdit, QAction, qApp, QDesktopWidget, QMainWindow, QWidget, QMessageBox, QToolTip, QPushButton)
+from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import *
-from PyQt5 import QtCore, QtGui
-#from PyQt5.QtGui import (QIcon, QFont)
-#from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtCore import *
+from PyQt5 import QtCore
 from PyQt5.QtGui import *
 from pathlib import Path
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import padasip as pa
-from pyqtgraph import PlotWidget, plot
-import pyqtgraph as pg
-import math
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+
 
 class Detekce(QMainWindow):
     def __init__(self):
@@ -32,31 +26,23 @@ class Detekce(QMainWindow):
         self.rl = None
         self.nmf = None
         self.nmd = None
+
+        self.MEAN = None
+        self.STDEV = None
+        self.VARIANCE = None
+
         self.initUI()
 
     def initUI(self):
-        self.setGeometry(100,100,700,580)
+        self.setGeometry(100, 100, 900, 580)  # 700
         self.setWindowTitle("AND - Application for novelty detection")
-        #self.vnitrograf()
+        self.label_I()
         self.tabulka()
         self.menugraf()
-        #self.menufil()
-        #self.menuDET()
         self.popisky()
-        #self.statusbar()
         self.combobox()
         self.lspeed()
         self.show()
-
-    #def vnitrograf(self):
-
-        #self.graphWidget = pg.PlotWidget(self)
-        #self.graphWidget.setXRange(100,500)
-        #self.graphWidget.setYRange(100,500)
-       # self.se
-        #self.graphWidget = pg.PlotWidget()
-        #self.graphWidget.setGeometry(600, 50, 500, 500)
-        #plt = pg.plot()
 
     def combobox(self):
         self.comboI = QComboBox(self)
@@ -70,7 +56,7 @@ class Detekce(QMainWindow):
         self.comboI.addItem("NLMS")
         self.comboI.addItem("LMS")
         self.comboI.addItem("LMF")
-        self.comboI.setGeometry(550,80,130,25)
+        self.comboI.setGeometry(550, 80, 130, 25)
 
         self.comboII = QComboBox(self)
         self.comboII.addItem("Choose detection")
@@ -78,9 +64,23 @@ class Detekce(QMainWindow):
         self.comboII.addItem("ELBND")
         self.comboII.setGeometry(550, 110, 130, 25)
 
-        self.spoust = QPushButton("Execute",self)
-        self.spoust.setGeometry(550,525,130,25)
+        self.spoust = QPushButton("Intr.speed detection", self)
+        self.spoust.setGeometry(550, 495, 130, 25)
+        self.spoust.clicked.connect(self.uzelII)
+
+        self.spoust = QPushButton("One speed detection", self)
+        self.spoust.setGeometry(550, 525, 130, 25)
         self.spoust.clicked.connect(self.uzel)
+
+    def uzelII(self):
+        h1 = int(self.textbox1.text())
+        h2 = int(self.textbox1s.text())
+        h3 = int(self.textbox1n.text())
+        for self.rl in range(h1,h2,h3):
+            self.vyber()
+            self.vyberfiltr()
+            self.vyberdet()
+            self.grafy()
 
     def uzel(self):
         self.lspeedchoose()
@@ -91,30 +91,30 @@ class Detekce(QMainWindow):
 
     def vyberfiltr(self):
         filt = self.comboI.currentText()
-        if (filt == "SSLMS"):
+        if filt == "SSLMS":
             self.filterSSLMS()
-        if (filt == "RLS"):
+        if filt == "RLS":
             self.filterRLS()
-        elif (filt == "NSSLMS"):
+        elif filt == "NSSLMS":
             self.filterNSSLMS()
-        elif (filt == "AP"):
+        elif filt == "AP":
             self.filterAP()
-        elif (filt == "GNGD"):
+        elif filt == "GNGD":
             self.filterGNGD()
-        elif (filt == "NLMF"):
+        elif filt == "NLMF":
             self.filterNLMF()
-        elif (filt == "NLMS"):
+        elif filt == "NLMS":
             self.filterNLMS()
-        elif (filt == "LMS"):
+        elif filt == "LMS":
             self.filterLMS()
-        elif (filt == "LMF"):
+        elif filt == "LMF":
             self.filterLMF()
 
     def vyberdet(self):
         det = self.comboII.currentText()
-        if (det == "LE"):
+        if det == "LE":
             self.detLE()
-        elif (det == "ELBND"):
+        elif det == "ELBND":
             self.detELBND()
 
     def menufil(self):
@@ -198,7 +198,7 @@ class Detekce(QMainWindow):
     def popisky(self):
         labelfilter = QLabel(self)
         labelfilter.setText("Learning speed")
-        labelfilter.setGeometry(550,225,130,25)
+        labelfilter.setGeometry(550, 225, 130, 25)
 
         labellenghtfil = QLabel(self)
         labellenghtfil.setText("Filter lenght")
@@ -208,54 +208,97 @@ class Detekce(QMainWindow):
         labelfilename.setText("Filename")
         labelfilename.setGeometry(550, 275, 130, 25)
 
+    def statupgr(self):
+        ant = 1000 * self.MEAN
+        art = (round(ant))/1000
+        ART = str(art)
+        self.label.setText("Mean:" + ART)
+        self.label.setStyleSheet("font-weight:bold")
+        self.label.setStyleSheet("font-size: 10pt")
+        self.setGeometry(QtCore.QRect(700, 40, 250, 50))
+        self.setGeometry(100, 100, 900, 580)
+
+        ans = 1000 * self.VARIANCE
+        ars = (round(ans)) / 1000
+        ARS = str(ars)
+        self.label_1.setText("Variance:" + ARS)
+        self.label_1.setStyleSheet("font-weight:bold")
+        self.label_1.setStyleSheet("font-size: 10pt")
+        self.setGeometry(QtCore.QRect(700, 40, 250, 50))
+        self.setGeometry(100, 100, 900, 580)
+
+        anp = 1000 * self.STDEV
+        arp = (round(anp)) / 1000
+        ARP = str(arp)
+        self.label_2.setText("Standart deviation:" + ARP)
+        self.label_2.setStyleSheet("font-weight:bold")
+        self.label_2.setStyleSheet("font-size: 10pt")
+        self.setGeometry(QtCore.QRect(700, 40, 250, 50))
+        self.setGeometry(100, 100, 900, 580)
+
+    def statokno(self):
+        stlist = np.ndarray.tolist(self.det)
+        self.MEAN = statistics.mean(stlist)
+        self.STDEV = statistics.stdev(stlist)
+        self.VARIANCE = statistics.variance(stlist)
+        print(self.MEAN)
+        print(self.STDEV)
+        print(self.VARIANCE)
+
+
+    def label_I(self):
+        self.label =QtWidgets.QLabel(self)
+        self.label.setText("Mean: None")
+        self.label.setStyleSheet("font-weight:bold")
+        self.label.setStyleSheet("font-size: 10pt")
+        self.label.setGeometry(QtCore.QRect(700, 40, 250, 50))
+        self.setGeometry(100, 100, 900, 580)
+        self.label.update()
+
+        self.label_1 = QtWidgets.QLabel(self)
+        self.label_1.setText("Variance: None")
+        self.label_1.setStyleSheet("font-weight:bold")
+        self.label_1.setStyleSheet("font-size: 10pt")
+        self.label_1.setGeometry(QtCore.QRect(700, 60, 250, 50))
+        self.setGeometry(100, 100, 900, 580)
+        self.label_1.update()
+
+        self.label_2 = QtWidgets.QLabel(self)
+        self.label_2.setText("Standart deviation: None")
+        self.label_2.setStyleSheet("font-weight:bold")
+        self.label_2.setStyleSheet("font-size: 10pt")
+        self.label_2.setGeometry(QtCore.QRect(700, 80, 250, 50))
+        self.setGeometry(100, 100, 900, 580)
+        self.label_2.update()
+
     def menugraf(self):
         opfil = QAction(QIcon("WWW.jpg"), "open", self)
         opfil.setShortcut("Ctrl+9")
         opfil.setStatusTip("Open a file")
         opfil.triggered.connect(self.loading)
 
-        ofiltl = QPushButton("Open a file",self)
-        ofiltl.setGeometry(550,50,130,25)
+        ofiltl = QPushButton("Open a file", self)
+        ofiltl.setGeometry(550, 50, 130, 25)
         ofiltl.clicked.connect(self.loading)
 
         namfil = QPushButton("Save parametrs", self)
         namfil.setGeometry(550, 330, 130, 25)
         namfil.clicked.connect(self.saveparametrs)
 
-        grafil = QAction(QIcon("WWW.jpg"), "Graph filter", self)
-        grafil.setShortcut("Ctrl+8")
-        grafil.setStatusTip("Open a graph")
-        grafil.triggered.connect(self.grafyfilt)
-
-        gradet = QAction(QIcon("WWW.jpg"), "Graph detection", self)
-        gradet.setShortcut("Ctrl+7")
-        gradet.setStatusTip("Open a graph")
-        gradet.triggered.connect(self.grafdet)
-
         vyb = QAction(QIcon("WWW.jpg"), "Selection", self)
         vyb.setShortcut("Ctrl+6")
         vyb.setStatusTip("Selected a column")
         vyb.triggered.connect(self.vyber)
 
-        #self.statusBar()
+        # self.statusBar()
         menubar = self.menuBar()
         fileMenu = menubar.addMenu("&Tools")
         fileMenu.addAction(opfil)
-        #fileMenu.addAction(grafil)
-        #fileMenu.addAction(gradet)
-        #fileMenu.addAction(vyb)
-
-    #def statusbar(self):
-        #self.label_1 = QLabel("Status Bar", self)
-        #self.label_1.move(580, 50)
-        #self.label_1.setStyleSheet("border :5px solid blue;")
-        #self.label_1.resize(100, 150)
-        #self.show()
 
     def loading(self):
         basefile = str(Path.home())
-        jmeno = QFileDialog.getOpenFileName(self,"open file", basefile)
-        hodnoty = open(jmeno[0],"r")
+        jmeno = QFileDialog.getOpenFileName(self, "open file", basefile)
+        hodnoty = open(jmeno[0], "r")
         mat1 =(np.genfromtxt(hodnoty, delimiter=",", skip_header=0))
         n = mat1.shape
         if len(n) == 1:
@@ -264,13 +307,13 @@ class Detekce(QMainWindow):
             m = n
         self.tableWidget.setRowCount(m[0])
         self.tableWidget.setColumnCount(m[1])
-        for i in range(0,m[0]):
-            for j in range(0,m[1]):
+        for i in range(0, m[0]):
+            for j in range(0, m[1]):
                 try:
                     if len(n) == 1:
                         self.tableWidget.setItem(i, j, QTableWidgetItem(str(mat1[i])))
                     else:
-                        self.tableWidget.setItem(i,j,QTableWidgetItem(str(mat1[i, j])))
+                        self.tableWidget.setItem(i, j, QTableWidgetItem(str(mat1[i, j])))
                 except Exception as ex:
                     print(ex)
         self.m = m
@@ -282,19 +325,19 @@ class Detekce(QMainWindow):
         n = self.m[0]
         print(n)
 
-
         for item in alt:
             u.append(float(item.text()))
         U = np.asarray(u)
         x = U.shape[0]
         f = x / n
         try:
-            p = np.reshape(U,(int(f),n))
+            p = np.reshape(U, (int(f), n))
             q = p.T
             self.q = q
         except Exception as ex:
             print(ex)
         self.statusBar().showMessage("Input column are selected")
+
     def uprava(self):
         try:
             s = self.q
@@ -313,8 +356,10 @@ class Detekce(QMainWindow):
             f = np.asarray([d])
             self.x = l.T
             self.d = f.T
+
         except:
             s = self.q
+            print(s)
             n = self.m[0]
             x = []
             d = []
@@ -330,9 +375,15 @@ class Detekce(QMainWindow):
 
     def lspeed(self):
         self.textbox1 = QLineEdit(self)
-        self.textbox1.setGeometry(550,250,130,25)
+        self.textbox1.setGeometry(550, 250, 30, 25)
+        self.textbox1s = QLineEdit(self)
+        self.textbox1s.setGeometry(600, 250, 30, 25)
+        self.textbox1n = QLineEdit(self)
+        self.textbox1n.setGeometry(650, 250, 30, 25)
+
+
         self.textbox2 = QLineEdit(self)
-        self.textbox2.setGeometry(550,300,130,25)
+        self.textbox2.setGeometry(550, 300, 130, 25)
         self.textbox3 = QLineEdit(self)
         self.textbox3.setGeometry(550, 200, 130, 25)
         self.show()
@@ -341,14 +392,18 @@ class Detekce(QMainWindow):
         try:
             spn = str(self.textbox1.text())
             name = str(self.textbox2.text())
-            art = {"Learning rate":spn,"Filter":self.nmf,"Detection tool":self.nmd}
+            stdev = str(self.STDEV)
+            variance = str(self.VARIANCE)
+            mean = str(self.MEAN)
+            sr = str(self.textbox3.text())
+            art = {"Learning rate": spn, "Filter length": sr, "Filter": self.nmf, "Detection tool": self.nmd, "Standart deviation": stdev, "Variance": variance, "Mean": mean}
             tra=repr(art)
-            f = open("%s.txt" % name,"w+")
+            f = open("%s.txt" % name, "w+")
             f.write(tra)
             self.statusBar().showMessage("Parametrs save")
             f.close()
         except:
-            art = {"Learning rate": self.rl, "Filter": self.nmf, "Detection tool": self.nmd}
+            art = {"Learning rate": self.rl,  "Filter length": sr, "Filter": self.nmf, "Detection tool": self.nmd, "Standart deviation": stdev, "Variance": variance, "Mean": mean}
             tra = repr(art)
             f = open("Detection parametrs","w+")
             f.write(tra)
@@ -359,8 +414,7 @@ class Detekce(QMainWindow):
             speedvalue = float(self.textbox1.text())
             self.rl = speedvalue
         except:
-            self.rl = 1
-
+            print("ok")
 
     def filterSSLMS(self):
         self.uprava()
@@ -483,37 +537,28 @@ class Detekce(QMainWindow):
         self.nmd = "ELBND"
         elbnd = pa.detection.ELBND(self.w, self.e, function="max")
         self.det = elbnd
+        print(elbnd)
         self.statusBar().showMessage("ELBND detection aplicated")
+        self.statokno()
+        self.statupgr()
 
     def detLE(self):
         self.nmd = "LE"
         le = pa.detection.learning_entropy(self.w, m=30, order=1)
-        self.det = le
+        n = le.shape
+        LE = np.reshape(le, (n[0],))
+        print(le)
+        print(LE)
+        self.det = LE
         self.statusBar().showMessage("LE detection aplicated")
+        self.statokno()
+        self.statupgr()
 
     def tabulka(self):
         self.tableWidget = QTableWidget(self)
         self.tableWidget.setRowCount(20)
         self.tableWidget.setColumnCount(5)
         self.tableWidget.setGeometry(25, 50, 500, 500)
-
-    def grafdet(self):
-
-        plt.plot(self.det)
-        plt.show()
-
-    def grafyfilt(self):
-
-        fig, axs = plt.subplots(3, 1)
-        axs[0].plot(self.e)
-        axs[1].plot(self.y)
-        axs[2].plot(self.w)
-        axs[0].grid(True)
-        axs[1].grid(True)
-        axs[2].grid(True)
-
-        fig.tight_layout()
-        plt.show()
 
     def grafy(self):
 
@@ -523,10 +568,10 @@ class Detekce(QMainWindow):
         axs[2].plot(self.w)
         axs[3].plot(self.det)
 
-        #axs[0].subtitle("Filter error for every sample")
-        #axs[1].subtitle("Output value")
-        #axs[2].subtitle("History of all weights")
-        #axs[3].subtitle("Detection values")
+        # axs[0].subtitle("Filter error for every sample")
+        # axs[1].subtitle("Output value")
+        # axs[2].subtitle("History of all weights")
+        # axs[3].subtitle("Detection values")
 
         axs[0].set_title("Filter error for every sample")
         axs[1].set_title("Output value")
