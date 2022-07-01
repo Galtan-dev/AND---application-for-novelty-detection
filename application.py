@@ -3,6 +3,7 @@ GUI for adaptive filters testing.
 """
 import sys
 from pathlib import Path
+import statistics
 
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import *
@@ -11,7 +12,7 @@ from PyQt5.QtGui import *
 import numpy as np
 import matplotlib.pyplot as plt
 import padasip as pa
-import statistics
+
 
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=c-extension-no-member
@@ -311,10 +312,9 @@ class Detekce(QMainWindow):
     def loading(self):
         basefile = str(Path.home())
         jmeno = QFileDialog.getOpenFileName(self, "open file", basefile)
-        hodnoty = open(jmeno[0], "r")
+        # hodnoty = open(jmeno[0], "r")
         with open(jmeno[0], "r", encoding="utf-8") as hodnoty:
             mat1 =(np.genfromtxt(hodnoty, delimiter=",", skip_header=0))
-
         n = mat1.shape
         if len(n) == 1:
             m = (n[0], 1)
@@ -413,11 +413,12 @@ class Detekce(QMainWindow):
             sr = str(self.textbox3.text())
             art = {"Learning rate": spn, "Filter length": sr, "Filter": self.nmf, "Detection tool": self.nmd, "Standart deviation": stdev, "Variance": variance, "Mean": mean}
             tra=repr(art)
-            f = open("%s.txt" % name, "w+")
+            f = open(f"{name}.txt", "w+")
             f.write(tra)
             self.statusBar().showMessage("Parametrs save")
             f.close()
-        except:
+        except Exception as ex:
+            print(ex)
             art = {"Learning rate": self.rl,  "Filter length": sr, "Filter": self.nmf, "Detection tool": self.nmd, "Standart deviation": stdev, "Variance": variance, "Mean": mean}
             tra = repr(art)
             f = open("Detection parametrs","w+")
@@ -618,7 +619,7 @@ class Detekce(QMainWindow):
             event.accept()
         else:
             event.ignore()
-            pass
+
 
 def main():
     app = QApplication(sys.argv)
