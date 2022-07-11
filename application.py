@@ -4,11 +4,14 @@ GUI for adaptive filters testing.
 import sys
 from pathlib import Path
 import statistics
+import os
 
 from PyQt5.QtWidgets import (QMainWindow, QComboBox, QPushButton,\
                              QAction, QLabel, QFileDialog, QTableWidgetItem,\
-                             QLineEdit, QTableWidget, QMessageBox, QApplication)
+                             QLineEdit, QTableWidget, QCheckBox, QMessageBox,\
+                             QApplication)
 from PyQt5.QtGui import (QIcon)
+from PyQt5.QtCore import QDate, Qt
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 
@@ -41,7 +44,9 @@ class Detekce(QMainWindow):
         self.mean = None
         self.standart_deviation = None
         self.variance = None
-
+        self.directory_3 = None
+        self.parent_dir_3 = None
+        self.label_savefig = None
         self.init_ui()
 
     def init_ui(self):
@@ -54,17 +59,76 @@ class Detekce(QMainWindow):
         self.combo_1 = QComboBox(self)
         self.combo_2 = QComboBox(self)
         self.label_1 = QtWidgets.QLabel(self)
-        self.label =QtWidgets.QLabel(self)
+        self.label = QtWidgets.QLabel(self)
         self.label_2 = QtWidgets.QLabel(self)
+        self.table_widget = QTableWidget(self)
+        self.textbox3 = QLineEdit(self)
+        self.textbox2 = QLineEdit(self)
+        self.textbox1n = QLineEdit(self)
+        self.textbox1s = QLineEdit(self)
+        self.textbox1 = QLineEdit(self)
+        self.button_one = QPushButton("Intr.speed detection", self)
+        self.button_two = QPushButton("One speed detection", self)
+        self.box = QCheckBox("Save output", self)
+        self.check_box_one()
         self.setGeometry(100, 100, 900, 580)  # 700
         self.setWindowTitle("AND - Application for novelty detection")
-        self.label_I()
+        self.label_one()
         self.tabulka()
         self.menugraf()
         self.popisky()
         self.combobox()
         self.lspeed()
         self.show()
+
+    def check_box_one(self):
+        """
+        Object which define checkbox for saving data.
+        :return: None
+        """
+        self.box.move(560, 350)
+        self.box.resize(320, 40)
+
+    def check_box_one_save(self):
+        """
+        Object which make dirs for save data and save them.
+        :return: None
+        """
+        if self.box.isChecked():
+            directory_1 = "Exp.files"
+            parent_dir_1 = "C:\Program Files (x86)"
+            path_1 = os.path.join(parent_dir_1, directory_1)
+            try:
+                os.makedirs(path_1)
+                print("dir maked")
+            except Exception as ex:
+                print(ex)
+
+            now = QDate.currentDate()
+            directory_2 = now.toString(Qt.ISODate)
+            parent_dir_2 = "C:\\Program Files (x86)\\Exp.files"
+            path_2 = os.path.join(parent_dir_2, directory_2)
+            try:
+                os.makedirs(path_2)
+                print("dir maked")
+            except Exception as ex:
+                print(ex)
+
+            try:
+                self.directory_3 = str(self.textbox2.text())
+                parent_dir_a = "C:\\Program Files (x86)\\Exp.files\\"
+                self.parent_dir_3 = parent_dir_a + directory_2
+                path_3 = os.path.join(self.parent_dir_3, self.directory_3)
+                try:
+                    os.makedirs(path_3)
+                    print("dir maked")
+                except Exception as ex:
+                    print(ex)
+            except Exception as ex:
+                print(ex)
+        else:
+            print("not checked")
+
 
     def combobox(self):
         """
@@ -83,19 +147,14 @@ class Detekce(QMainWindow):
         self.combo_1.addItem("LMS")
         self.combo_1.addItem("LMF")
         self.combo_1.setGeometry(550, 80, 130, 25)
-
         self.combo_2.addItem("Choose detection")
         self.combo_2.addItem("LE")
         self.combo_2.addItem("ELBND")
         self.combo_2.setGeometry(550, 110, 130, 25)
-
-        self.spoust = QPushButton("Intr.speed detection", self)
-        self.spoust.setGeometry(550, 495, 130, 25)
-        self.spoust.clicked.connect(self.node_2)
-
-        self.spoust = QPushButton("One speed detection", self)
-        self.spoust.setGeometry(550, 525, 130, 25)
-        self.spoust.clicked.connect(self.node_1)
+        self.button_one.setGeometry(550, 495, 130, 25)
+        self.button_one.clicked.connect(self.node_2)
+        self.button_two.setGeometry(550, 525, 130, 25)
+        self.button_two.clicked.connect(self.node_1)
 
     def node_2(self):
         """
@@ -109,9 +168,12 @@ class Detekce(QMainWindow):
         step = float(self.textbox1n.text())
         for self.learning_rate in np.arange(bottom_interval,\
                                             top_interval, step):
+
+            self.label_savefig = round(self.learning_rate, 5)
             self.vyber()
             self.vyberfiltr()
             self.vyberdet()
+            self.check_box_one_save()
             self.grafy()
 
     def node_1(self):
@@ -125,6 +187,7 @@ class Detekce(QMainWindow):
         self.vyber()
         self.vyberfiltr()
         self.vyberdet()
+        self.check_box_one_save()
         self.grafy()
 
     def vyberfiltr(self):
@@ -134,23 +197,23 @@ class Detekce(QMainWindow):
         """
         filt = self.combo_1.currentText()
         if filt == "SSLMS":
-            self.filterSSLMS()
+            self.filter_sslms()
         if filt == "RLS":
-            self.filterRLS()
+            self.filter_rls()
         elif filt == "NSSLMS":
-            self.filterNSSLMS()
+            self.filter_nsslms()
         elif filt == "AP":
-            self.filterAP()
+            self.filter_ap()
         elif filt == "GNGD":
-            self.filterGNGD()
+            self.filter_gngd()
         elif filt == "NLMF":
-            self.filterNLMF()
+            self.filter_nlmf()
         elif filt == "NLMS":
-            self.filterNLMS()
+            self.filter_nlms()
         elif filt == "LMS":
-            self.filterLMS()
+            self.filter_lms()
         elif filt == "LMF":
-            self.filterLMF()
+            self.filter_lmf()
 
     def vyberdet(self):
         """
@@ -159,9 +222,9 @@ class Detekce(QMainWindow):
         """
         det = self.combo_2.currentText()
         if det == "LE":
-            self.detLE()
+            self.det_le()
         elif det == "ELBND":
-            self.detELBND()
+            self.det_elbnd()
 
     def menufil(self):
         """
@@ -175,47 +238,47 @@ class Detekce(QMainWindow):
         sslms = QAction(QIcon("WWW.jpg"), "SSLMS", self)
         sslms.setShortcut("Ctrl+F")
         sslms.setStatusTip("Sign-sign Least-mean-squares (SSLMS)")
-        sslms.triggered.connect(self.filterSSLMS)
+        sslms.triggered.connect(self.filter_sslms)
 
         rls = QAction(QIcon("WWW.jpg"), "RLS", self)
         rls.setShortcut("Ctrl+R")
         rls.setStatusTip("Recursive Least Squares (RLS)")
-        rls.triggered.connect(self.filterRLS)
+        rls.triggered.connect(self.filter_rls)
 
         nsslms = QAction(QIcon("WWW.jpg"), "NSSLMS", self)
         nsslms.setShortcut("Ctrl+Q")
         nsslms.setStatusTip("Normalized Sign-sign Least-mean-squares (NSSLMS)")
-        nsslms.triggered.connect(self.filterNSSLMS)
+        nsslms.triggered.connect(self.filter_nsslms)
 
         ap_filter = QAction(QIcon("WWW.jpg"), "AP", self)
         ap_filter.setShortcut("Ctrl+A")
         ap_filter.setStatusTip("Affine Projection (AP)")
-        ap_filter.triggered.connect(self.filterAP)
+        ap_filter.triggered.connect(self.filter_ap)
 
         gngd = QAction(QIcon("WWW.jpg"), "GNGD", self)
         gngd.setShortcut("Ctrl+G")
         gngd.setStatusTip("Generalized Normalized Gradient Descent (GNGD)")
-        gngd.triggered.connect(self.filterGNGD)
+        gngd.triggered.connect(self.filter_gngd)
 
         nlms = QAction(QIcon("WWW.jpg"), "NLMS", self)
         nlms.setShortcut("Ctrl+N")
         nlms.setStatusTip("Normalized Least-mean-squares (NLMS)")
-        nlms.triggered.connect(self.filterNLMS)
+        nlms.triggered.connect(self.filter_nlms)
 
         nlmf = QAction(QIcon("WWW.jpg"), "NLMF", self)
         nlmf.setShortcut("Ctrl+F")
         nlmf.setStatusTip("Normalized Least-mean-fourth (NLMF)")
-        nlmf.triggered.connect(self.filterNLMF)
+        nlmf.triggered.connect(self.filter_nlmf)
 
         lms = QAction(QIcon("WWW.jpg"), "LMS", self)
         lms.setShortcut("Ctrl+S")
         lms.setStatusTip("Least-mean-fourth (LMS)")
-        lms.triggered.connect(self.filterLMS)
+        lms.triggered.connect(self.filter_lms)
 
         lmf = QAction(QIcon("WWW.jpg"), "LMF", self)
         lmf.setShortcut("Ctrl+M")
         lmf.setStatusTip("Least-mean-fourth (LMF)")
-        lmf.triggered.connect(self.filterLMF)
+        lmf.triggered.connect(self.filter_lmf)
 
         file_menu.addAction(sslms)
         file_menu.addAction(rls)
@@ -239,12 +302,12 @@ class Detekce(QMainWindow):
         elbnd_detection = QAction(QIcon("WWW.jpg"), "ELBND", self)
         elbnd_detection.setShortcut("Ctrl+1")
         elbnd_detection.setStatusTip("Error and Learning Based Novelty Detection (ELBND)")
-        elbnd_detection.triggered.connect(self.detELBND)
+        elbnd_detection.triggered.connect(self.det_elbnd)
 
         le_detection = QAction(QIcon("WWW.jpg"), "LE", self)
         le_detection.setShortcut("Ctrl+2")
         le_detection.setStatusTip("Learning Entropy (LE)")
-        le_detection.triggered.connect(self.detLE)
+        le_detection.triggered.connect(self.det_le)
 
         file_menu.addAction(elbnd_detection)
         file_menu.addAction(le_detection)
@@ -312,7 +375,7 @@ class Detekce(QMainWindow):
         print(self.variance)
 
 
-    def label_I(self):
+    def label_one(self):
         """
         Object which define statistic labels for the first time.
         :return: None
@@ -362,6 +425,10 @@ class Detekce(QMainWindow):
         file_menu.addAction(opfil)
 
     def loading(self):
+        """
+        In that object is open file with data and reorganize into matrix for analyze.
+        :return: None
+        """
         basefile = str(Path.home())
         jmeno = QFileDialog.getOpenFileName(self, "open file", basefile)
         # hodnoty = open(jmeno[0], "r")
@@ -387,6 +454,11 @@ class Detekce(QMainWindow):
         self.statusBar().showMessage("Files are loaded")
 
     def vyber(self):
+        """
+        Function of this object is selection of column marked
+        for analyzation and insert this column into the matrix.
+        :return: None
+        """
         alt = self.table_widget.selectedItems()
         selection_list = []
         selection_list_shape = self.matrix_shape[0]
@@ -407,6 +479,12 @@ class Detekce(QMainWindow):
         self.statusBar().showMessage("Input column are selected")
 
     def uprava(self):
+        """
+        Object which reorganize data from selected column into two matrixes.
+        First matrix is with input values and second is
+        filed with desired values.
+        :return: None
+        """
         try:
             trans_matrix = self.transposed_matrix
             shape = self.matrix_shape[0]
@@ -425,7 +503,8 @@ class Detekce(QMainWindow):
             self.input_desired_data = desired_data_in_progres.T
             self.input_data = input_data_in_progres.T
 
-        except:
+        except Exception as ex:
+            print(ex)
             trans_matrix = self.transposed_matrix
             print(trans_matrix)
             shape = self.matrix_shape[0]
@@ -442,48 +521,58 @@ class Detekce(QMainWindow):
             self.input_data = input_data_in_progres.T
 
     def lspeed(self):
-        self.textbox1 = QLineEdit(self)
+        """
+        Objcet which define textboxes.
+        :return: None
+        """
         self.textbox1.setGeometry(550, 250, 30, 25)
-        self.textbox1s = QLineEdit(self)
         self.textbox1s.setGeometry(600, 250, 30, 25)
-        self.textbox1n = QLineEdit(self)
         self.textbox1n.setGeometry(650, 250, 30, 25)
-
-
-        self.textbox2 = QLineEdit(self)
         self.textbox2.setGeometry(550, 300, 130, 25)
-        self.textbox3 = QLineEdit(self)
         self.textbox3.setGeometry(550, 200, 130, 25)
         self.show()
 
     def saveparametrs(self):
+        """
+        Object which define function for button save parametrs.
+        These parametrs are saved into the .txt file.
+        :return: None
+        """
         try:
             spn = str(self.textbox1.text())
             name = str(self.textbox2.text())
             stdev = str(self.standart_deviation)
             variance = str(self.variance)
             mean = str(self.mean)
-            sr = str(self.textbox3.text())
-            art = {"Learning rate": spn, "Filter length": sr, "Filter": self.filter_name,\
+            filter_lenght_string = str(self.textbox3.text())
+            saved_parametrs = {"Learning rate": spn, "Filter length":\
+                filter_lenght_string, "Filter": self.filter_name,\
                    "Detection tool": self.detection_name, "Standart deviation": stdev,\
                    "Variance": variance, "Mean": mean}
-            tra=repr(art)
-            f = open(f"{name}.txt", "w+")
-            f.write(tra)
+            saved_parametrs_string=repr(saved_parametrs)
+            write_parametrs = open(f"{name}.txt", "w+")
+            write_parametrs.write(saved_parametrs_string)
             self.statusBar().showMessage("Parametrs save")
-            f.close()
+            write_parametrs.close()
         except Exception as ex:
             print(ex)
-            art = {"Learning rate": self.learning_rate, "Filter length": sr,\
+            saved_parametrs = {"Learning rate": self.learning_rate,\
+                               "Filter length": filter_lenght_string,\
                    "Filter": self.filter_name,"Detection tool": self.detection_name,\
                    "Standart deviation": stdev,\
                    "Variance": variance, "Mean": mean}
-            tra = repr(art)
-            f = open("Detection parametrs","w+")
-            f.write(tra)
-            f.close()
+            saved_parametrs_string = repr(saved_parametrs)
+            #write_parametrs = open("Detection parametrs", "w+")
+            with open("Detection parametrs", "w+", encoding="utf-8") as write_parametrs:
+                write_parametrs.write(saved_parametrs_string)
+            write_parametrs.close()
 
     def lspeedchoose(self):
+        """
+        Object which set learning speed written into the textbox.
+        If textbox is empty, learning rate is set to 1.
+        :return: None
+        """
         try:
             speedvalue = float(self.textbox1.text())
             self.learning_rate = speedvalue
@@ -491,12 +580,16 @@ class Detekce(QMainWindow):
             print(ex)
             self.learning_rate = 1
 
-    def filterSSLMS(self):
+    def filter_sslms(self):
+        """
+        Filter procesing and values assignment
+        :return: None
+        """
         self.uprava()
         self.filter_name = "SSLMS"
         try:
-            f = pa.filters.FilterSSLMS(n=1, mu=self.learning_rate, w="zeros")
-            output, error, weights = f.run(self.input_data, self.input_desired_data)
+            proces_file = pa.filters.FilterSSLMS(n=1, mu=self.learning_rate, w="zeros")
+            output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
         self.filter_output = output
@@ -504,12 +597,16 @@ class Detekce(QMainWindow):
         self.filter_error = error
         self.statusBar().showMessage("SSLMS filter aplicated")
 
-    def filterRLS(self):
+    def filter_rls(self):
+        """
+        Filter procesing and values assignment
+        :return: None
+        """
         self.uprava()
         self.filter_name = "RLS"
         try:
-            f = pa.filters.FilterRLS(n=1, mu=self.learning_rate, w="zeros")
-            output, error, weights = f.run(self.input_data, self.input_desired_data)
+            proces_file = pa.filters.FilterRLS(n=1, mu=self.learning_rate, w="zeros")
+            output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
         self.filter_output = output
@@ -517,12 +614,16 @@ class Detekce(QMainWindow):
         self.filter_error = error
         self.statusBar().showMessage("RLS filter aplicated")
 
-    def filterNSSLMS(self):
+    def filter_nsslms(self):
+        """
+        Filter procesing and values assignment
+        :return: None
+        """
         self.uprava()
         self.filter_name = "NSSLMS"
         try:
-            f = pa.filters.FilterNSSLMS(n=1, mu=self.learning_rate, w="zeros")
-            output, error, weights = f.run(self.input_data, self.input_desired_data)
+            proces_file = pa.filters.FilterNSSLMS(n=1, mu=self.learning_rate, w="zeros")
+            output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
         self.filter_output = output
@@ -530,12 +631,16 @@ class Detekce(QMainWindow):
         self.filter_error = error
         self.statusBar().showMessage("NSSLMS filter aplicated")
 
-    def filterAP(self):
+    def filter_ap(self):
+        """
+        Filter procesing and values assignment
+        :return: None
+        """
         self.uprava()
         self.filter_name = "AP"
         try:
-            f = pa.filters.FilterAP(n=1, mu=self.learning_rate, w="zeros")
-            output, error, weights = f.run(self.input_data, self.input_desired_data)
+            proces_file = pa.filters.FilterAP(n=1, mu=self.learning_rate, w="zeros")
+            output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
         self.filter_output = output
@@ -543,72 +648,96 @@ class Detekce(QMainWindow):
         self.filter_error = error
         self.statusBar().showMessage("AP filter aplicated")
 
-    def filterNLMS(self):
+    def filter_nlms(self):
+        """
+        Filter procesing and values assignment
+        :return: None
+        """
         self.uprava()
         self.filter_name = "NLMS"
         try:
-            f = pa.filters.FilterNLMS(n=1, mu=self.learning_rate, w="zeros")
-            y, e, w = f.run(self.input_data, self.input_desired_data)
+            proces_file = pa.filters.FilterNLMS(n=1, mu=self.learning_rate, w="zeros")
+            output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
-        self.filter_output = y
-        self.filter_parametrs = w
-        self.filter_error = e
+        self.filter_output = output
+        self.filter_parametrs = weights
+        self.filter_error = error
         self.statusBar().showMessage("NLMS filter aplicated")
 
-    def filterGNGD(self):
+    def filter_gngd(self):
+        """
+        Filter procesing and values assignment
+        :return: None
+        """
         self.uprava()
         self.filter_name = "GNGD"
         try:
-            f = pa.filters.FilterGNGD(n=1, mu=self.learning_rate, w="zeros")
-            y, e, w = f.run(self.input_data, self.input_desired_data)
+            proces_file = pa.filters.FilterGNGD(n=1, mu=self.learning_rate, w="zeros")
+            output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
-        self.filter_output = y
-        self.filter_parametrs = w
-        self.filter_error = e
+        self.filter_output = output
+        self.filter_parametrs = weights
+        self.filter_error = error
         self.statusBar().showMessage("GNGD filter aplicated")
 
-    def filterNLMF(self):
+    def filter_nlmf(self):
+        """
+        Filter procesing and values assignment
+        :return: None
+        """
         self.uprava()
         self.filter_name = "NLMF"
         try:
-            f = pa.filters.FilterNLMF(n=1, mu=self.learning_rate, w="zeros")
-            y, e, w = f.run(self.input_data, self.input_desired_data)
+            proces_file = pa.filters.FilterNLMF(n=1, mu=self.learning_rate, w="zeros")
+            output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
-        self.filter_output = y
-        self.filter_parametrs = w
-        self.filter_error = e
+        self.filter_output = output
+        self.filter_parametrs = weights
+        self.filter_error = error
         self.statusBar().showMessage("NLMF filter aplicated")
 
-    def filterLMS(self):
+    def filter_lms(self):
+        """
+        Filter procesing and values assignment
+        :return: None
+        """
         self.uprava()
         self.filter_name = "LMS"
         try:
-            f = pa.filters.FilterLMS(n=1, mu=self.learning_rate, w="zeros")
-            y, e, w = f.run(self.input_data, self.input_desired_data)
+            proces_file = pa.filters.FilterLMS(n=1, mu=self.learning_rate, w="zeros")
+            output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
-        self.filter_output = y
-        self.filter_parametrs = w
-        self.filter_error = e
+        self.filter_output = output
+        self.filter_parametrs = weights
+        self.filter_error = error
         self.statusBar().showMessage("LMS filter aplicated")
 
-    def filterLMF(self):
+    def filter_lmf(self):
+        """
+        Filter procesing and values assignment
+        :return: None
+        """
         self.uprava()
         self.filter_name = "LMF"
         try:
-            f = pa.filters.FilterLMF(n=1, mu=self.learning_rate, w="zeros")
-            y, e, w = f.run(self.input_data, self.input_desired_data)
+            proces_file = pa.filters.FilterLMF(n=1, mu=self.learning_rate, w="zeros")
+            output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
-        self.filter_output = y
-        self.filter_parametrs = w
-        self.filter_error = e
+        self.filter_output = output
+        self.filter_parametrs = weights
+        self.filter_error = error
         self.statusBar().showMessage("LMF filter aplicated")
 
-    def detELBND(self):
+    def det_elbnd(self):
+        """
+        Detection tool procesing and values assignment
+        :return: None
+        """
         self.detection_name = "ELBND"
         elbnd = pa.detection.ELBND(self.filter_parametrs, self.filter_error, function="max")
         self.output_detection_tool = elbnd
@@ -617,36 +746,42 @@ class Detekce(QMainWindow):
         self.statokno()
         self.statupgr()
 
-    def detLE(self):
+    def det_le(self):
+        """
+        Detection tool procesing and values assignment
+        :return: None
+        """
         self.detection_name = "LE"
-        le = pa.detection.learning_entropy(self.filter_parametrs, m=30, order=1)
-        n = le.shape
-        LE = np.reshape(le, (n[0],))
-        print(le)
-        print(LE)
-        self.output_detection_tool = LE
+        le_detection = pa.detection.learning_entropy(self.filter_parametrs, m=30, order=1)
+        det_le_matrix_shape = le_detection.shape
+        reshaped_output_matrix = np.reshape(le_detection, (det_le_matrix_shape[0],))
+        print(le_detection)
+        print(reshaped_output_matrix)
+        self.output_detection_tool = reshaped_output_matrix
         self.statusBar().showMessage("LE detection aplicated")
         self.statokno()
         self.statupgr()
 
     def tabulka(self):
-        self.table_widget = QTableWidget(self)
+        """
+        Object which define table for data from .csv file.
+        :return: None
+        """
         self.table_widget.setRowCount(20)
         self.table_widget.setColumnCount(5)
         self.table_widget.setGeometry(25, 50, 500, 500)
 
     def grafy(self):
-
+        """
+        Object which define graphs for output from filter
+        and output from detection tool.
+        :return: None
+        """
         fig, axs = plt.subplots(4, 1)
         axs[0].plot(self.filter_error)
         axs[1].plot(self.filter_output)
         axs[2].plot(self.filter_parametrs)
         axs[3].plot(self.output_detection_tool)
-
-        # axs[0].subtitle("Filter error for every sample")
-        # axs[1].subtitle("Output value")
-        # axs[2].subtitle("History of all weights")
-        # axs[3].subtitle("Detection values")
 
         axs[0].set_title("Filter error for every sample")
         axs[1].set_title("Output value")
@@ -670,7 +805,23 @@ class Detekce(QMainWindow):
 
         fig.tight_layout()
         plt.show()
+
+        try:
+            origin_directory = os.getcwd()
+            parent_dir_4 = self.parent_dir_3 + "\\" + self.directory_3
+            os.chdir(parent_dir_4)
+            current_setup = "R" + str(self.textbox2.text()) + str(self.label_savefig) + ".jpg"
+            plt.savefig(current_setup)
+            os.chdir(origin_directory)
+        except Exception as ex:
+            print(ex)
+
     def closeEvent(self, event):
+        """
+        CloseEvent is function which questioned you if you
+        realy want close app.
+        :return: None
+        """
         reply = QMessageBox.question(self, 'Window Close',\
                                      'Are you sure you want to close the window?',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -679,10 +830,13 @@ class Detekce(QMainWindow):
         else:
             event.ignore()
 
-
 def main():
+    """
+    Main section, system exit from application.
+    :return: None
+    """
     app = QApplication(sys.argv)
-    ex = Detekce()
+    ex_ex = Detekce()
     sys.exit(app.exec_())
 
 if __name__=="__main__":
