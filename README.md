@@ -31,5 +31,5 @@
 - click on int.speed detection.
 ### Tips and advice
 - use decimal dot, not comma.
-- if you not fill all windows, except mentioned, application crash.
+- if you not fill all windows, except mentioned, application will crash.
 - This version is first experimental version for use, is possible that some special examples will not work.
