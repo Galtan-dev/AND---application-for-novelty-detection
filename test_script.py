@@ -1,6 +1,7 @@
 """
 GUI for adaptive filters testing.
 """
+import random
 import sys
 from pathlib import Path
 import statistics
@@ -582,8 +583,8 @@ class Detekce(QMainWindow):
 
             self.testlist = np.concatenate(self.input_desired_data, axis=0)
             sec_column = []
-            for i in range(0,995):
-                sec_column.append(1)
+            for i in range(0, 995):
+                sec_column.append(0.01*random.randint(0, 99))
             sec_column_matrix = np.asarray(sec_column)
             old_input = np.reshape(self.input_data, (995,))
             try:
@@ -593,10 +594,11 @@ class Detekce(QMainWindow):
             except Exception as ex:
                 print(ex)
 
-            #print(self.input_desired_data)
-            #print(self.input_data)
-            print(self.testlist.shape)
-            print(self.new_input_arary_reshaped.shape)
+            #print(self.input_desired_data.shape)
+            #print(self.input_data.shape)
+            print(self.testlist)
+            print("blank")
+            print(self.new_input_arary_reshaped)
 
 
     def lspeed(self):
