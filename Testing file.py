@@ -39,3 +39,38 @@ print(x)
 f = pa.filters.FilterGNGD(n=4, mu=0.1, w="random")
 y, e, w = f.run(d, x)
 
+
+
+
+
+
+with open("Slozena_funkce.csv", "r", encoding="utf-8") as hodnoty:
+    mat1 = (np.genfromtxt(hodnoty, delimiter=",", skip_header=0))
+mat2 = np.reshape(mat1, (1000, 1))
+mat3 = np.reshape(mat1, (1000, 1))
+
+MAT2 = []
+MAT3 = []
+
+for i in range(0,995):
+    MAT2.append(mat2[i])
+    MAT3.append(mat3[i])
+
+mat4 = np.concatenate((MAT2,MAT3))
+input_mat = np.reshape(mat4, (995, 2))
+
+mat5 = []
+for i in range(5, 1000):
+    mat5.append(mat2[i])
+
+desired_mat = np.concatenate(mat5)
+
+f = pa.filters.FilterGNGD(n=2, mu=0.1, w="random")
+y, e, w = f.run(desired_mat, input_mat)
+
+print(input_mat)
+print(desired_mat)
+print(len(input_mat))
+print(len(desired_mat))
+print(type(input_mat))
+print(type(desired_mat))

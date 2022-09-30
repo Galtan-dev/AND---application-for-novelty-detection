@@ -10,7 +10,7 @@ import os
 from PyQt5.QtWidgets import (QMainWindow, QComboBox, QPushButton,\
                              QAction, QLabel, QFileDialog, QTableWidgetItem,\
                              QLineEdit, QTableWidget, QCheckBox, QMessageBox,\
-                             QApplication)
+                             QApplication, QVBoxLayout)
 from PyQt5.QtGui import (QIcon)
 from PyQt5.QtCore import QDate, Qt
 from PyQt5 import QtCore
@@ -581,26 +581,6 @@ class Detekce(QMainWindow):
             self.input_desired_data = desired_data_in_progres.T
             self.input_data = input_data_in_progres.T
 
-            self.testlist = np.concatenate(self.input_desired_data, axis=0)
-            sec_column = []
-            for i in range(0, 995):
-                sec_column.append(0.01*random.randint(0, 99))
-            sec_column_matrix = np.asarray(sec_column)
-            old_input = np.reshape(self.input_data, (995,))
-            try:
-                new_input = np.concatenate((old_input,sec_column_matrix))
-                new_input_arary = np.asarray(new_input)
-                self.new_input_arary_reshaped = np.reshape(new_input_arary, (995,2), order="F")
-            except Exception as ex:
-                print(ex)
-
-            #print(self.input_desired_data.shape)
-            #print(self.input_data.shape)
-            print(self.testlist)
-            print("blank")
-            print(self.new_input_arary_reshaped)
-
-
     def lspeed(self):
         """
         Objcet which define textboxes.
@@ -754,10 +734,9 @@ class Detekce(QMainWindow):
         """
         self.uprava()
         self.filter_name = "GNGD"
-
         try:
-            proces_file = pa.filters.FilterGNGD(n=2, mu=self.learning_rate, w="zeros")
-            output, error, weights = proces_file.run(self.new_input_arary_reshaped, self.testlist)
+            proces_file = pa.filters.FilterGNGD(n=1, mu=self.learning_rate, w="random")
+            output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print("tady")
             print(ex)
