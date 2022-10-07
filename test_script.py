@@ -7,10 +7,10 @@ from pathlib import Path
 import statistics
 import os
 
-from PyQt5.QtWidgets import (QMainWindow, QComboBox, QPushButton,\
+from PyQt5.QtWidgets import (QMainWindow,QWidget, QComboBox, QPushButton,\
                              QAction, QLabel, QFileDialog, QTableWidgetItem,\
                              QLineEdit, QTableWidget, QCheckBox, QMessageBox,\
-                             QApplication, QVBoxLayout)
+                             QApplication,QHBoxLayout, QVBoxLayout)
 from PyQt5.QtGui import (QIcon)
 from PyQt5.QtCore import QDate, Qt
 from PyQt5 import QtCore
@@ -30,6 +30,7 @@ class Detekce(QMainWindow):
     """
     def __init__(self):
         QMainWindow.__init__(self)
+        super(Detekce, self).__init__()
 
         self.new_input_arary_reshaped = None
         self.testlist = None
@@ -86,6 +87,7 @@ class Detekce(QMainWindow):
         self.popisky()
         self.combobox()
         self.lspeed()
+        self.selection_window()
         self.show()
 
     def new_selection(self):
@@ -174,6 +176,7 @@ class Detekce(QMainWindow):
         self.combo_2.addItem("Choose detection")
         self.combo_2.addItem("LE")
         self.combo_2.addItem("ELBND")
+        self.combo_2.addItem("ESE")
         self.combo_2.setGeometry(550, 110, 130, 25)
         self.button_one.setGeometry(550, 495, 130, 25)
         self.button_one.clicked.connect(self.node_2)
@@ -284,6 +287,8 @@ class Detekce(QMainWindow):
             self.det_le()
         elif det == "ELBND":
             self.det_elbnd()
+        elif det == "ESE":
+            self.det_ese()
 
     def menufil(self):
         """
@@ -368,8 +373,14 @@ class Detekce(QMainWindow):
         le_detection.setStatusTip("Learning Entropy (LE)")
         le_detection.triggered.connect(self.det_le)
 
+        ese_detection = QAction(QIcon("WWW.jpg"), "ESE", self)
+        ese_detection.setShortcut("Ctrl+3")
+        ese_detection.setStatusTip("Extreme seeking entrophy (ESE)")
+        ese_detection.triggered.connect(self.det_ese)
+
         file_menu.addAction(elbnd_detection)
         file_menu.addAction(le_detection)
+        file_menu.addAction(ese_detection)
 
     def popisky(self):
         """
@@ -823,6 +834,20 @@ class Detekce(QMainWindow):
         self.statokno()
         self.statupgr()
 
+    def det_ese(self):
+        """
+        Detection tool procesing and values assignment
+        :return: None
+        """
+
+        self.detection_name = "ESE"
+        ese = pa.detection.ESE(self.filter_parametrs)
+        self.output_detection_tool = ese
+        self.statusBar().showMessage("ELBND detection aplicated")
+        self.statokno()
+        self.statupgr()
+
+
     def tabulka(self):
         """
         Object which define table for data from .csv file.
@@ -890,6 +915,45 @@ class Detekce(QMainWindow):
             event.accept()
         else:
             event.ignore()
+
+    def selection_window(self):
+        # Button
+        self.button = QPushButton(self)
+        self.button.setGeometry(850, 500, 50, 50)
+        self.button.setText('Main Window')
+        self.button.setStyleSheet('font-size:40px')
+        self.button.show()
+
+        # Sub Window
+        self.sub_window = SubWindow()
+
+        # Button Event
+        self.button.clicked.connect(self.sub_window.show)
+
+
+class SubWindow(QWidget):
+    def __init__(self):
+        super(SubWindow, self).__init__()
+        self.resize(400, 300)
+        self.detekce = Detekce()
+
+        # Label
+        self.label = QLabel(self)
+        self.label.setGeometry(0, 0, 400, 300)
+        self.label.setText('Sub Window')
+        self.label.setAlignment(Qt.AlignCenter)
+        self.label.setStyleSheet('font-size:40px')
+
+        # List_of_columns
+        print(self.Detekce.textbox4.text())
+
+
+        # Checkboxes
+        for i in range(0, 5):
+            box_name = "Column " + str(i)
+            self.dabox = QCheckBox(box_name, self)
+            self.dabox.setGeometry(10, 10+i*25, 100, 50)
+
 
 def main():
     """
