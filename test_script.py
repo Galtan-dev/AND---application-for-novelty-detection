@@ -31,7 +31,9 @@ class Detekce(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         super(Detekce, self).__init__()
+        self.data_send = SubWindow()
 
+        self.column_count = None
         self.new_input_arary_reshaped = None
         self.testlist = None
         self.directory_2 = None
@@ -505,6 +507,7 @@ class Detekce(QMainWindow):
         with open(jmeno[0], "r", encoding="utf-8") as hodnoty:
             mat1 =(np.genfromtxt(hodnoty, delimiter=",", skip_header=0))
         loading_matrix_shape = mat1.shape
+        self.column_count = loading_matrix_shape
 
         if len(loading_matrix_shape) == 1:
             loading_matrix_length = (loading_matrix_shape[0], 1)
@@ -902,6 +905,29 @@ class Detekce(QMainWindow):
         except Exception as ex:
             print(ex)
 
+    def var_send(self):
+        """
+        Object which send variables to second window
+        :return: None
+        """
+        key_var = self.column_count
+        self.data_send.add_item(key_var)
+
+    def selection_window(self):
+        # Button
+        self.button = QPushButton(self)
+        self.button.setGeometry(850, 500, 50, 50)
+        self.button.setText('Main Window')
+        self.button.setStyleSheet('font-size:40px')
+        self.button.show()
+
+        # Sub Window
+        self.sub_window = SubWindow()
+
+        # Button Event
+        self.button.clicked.connect(self.var_send)
+        self.button.clicked.connect(self.sub_window.show)
+
     def closeEvent(self, event):
         """
         CloseEvent is function which questioned you if you
@@ -916,26 +942,12 @@ class Detekce(QMainWindow):
         else:
             event.ignore()
 
-    def selection_window(self):
-        # Button
-        self.button = QPushButton(self)
-        self.button.setGeometry(850, 500, 50, 50)
-        self.button.setText('Main Window')
-        self.button.setStyleSheet('font-size:40px')
-        self.button.show()
-
-        # Sub Window
-        self.sub_window = SubWindow()
-
-        # Button Event
-        self.button.clicked.connect(self.sub_window.show)
-
 
 class SubWindow(QWidget):
     def __init__(self):
         super(SubWindow, self).__init__()
         self.resize(400, 300)
-        self.detekce = Detekce()
+        self.data_cache = None
 
         # Label
         self.label = QLabel(self)
@@ -944,15 +956,18 @@ class SubWindow(QWidget):
         self.label.setAlignment(Qt.AlignCenter)
         self.label.setStyleSheet('font-size:40px')
 
-        # List_of_columns
-        print(self.Detekce.textbox4.text())
+    def add_item(self, key_var):
+        self.data_cache = [key_var]
+        self.checkboxes()
 
-
-        # Checkboxes
-        for i in range(0, 5):
+    def checkboxes(self):
+        print("anhah")
+        print(self.data_cache[0])
+        for i in range(0, 8):
             box_name = "Column " + str(i)
             self.dabox = QCheckBox(box_name, self)
-            self.dabox.setGeometry(10, 10+i*25, 100, 50)
+            self.dabox.setGeometry(10, 10 + i * 25, 100, 50)
+            self.dabox.show()
 
 
 def main():
