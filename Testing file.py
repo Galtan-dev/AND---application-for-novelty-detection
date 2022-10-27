@@ -16,7 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import padasip as pa
 # Import the os module
-
+import csv
 
 
 import numpy as np
@@ -74,3 +74,10 @@ print(len(input_mat))
 print(len(desired_mat))
 print(type(input_mat))
 print(type(desired_mat))
+
+
+# new csv file creation
+
+import numpy as np
+arr = np.asarray([ [7,8,9,6,7,8], [5,8,9,4,6,4],  [4,8,7,4,6,2], [7,8,9,6,7,8], [4,8,7,4,6,2] ])
+arr.tofile('sample.csv', sep = ',')

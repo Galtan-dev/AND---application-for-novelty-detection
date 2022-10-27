@@ -10,9 +10,9 @@ import os
 from PyQt5.QtWidgets import (QMainWindow,QWidget, QComboBox, QPushButton,\
                              QAction, QLabel, QFileDialog, QTableWidgetItem,\
                              QLineEdit, QTableWidget, QCheckBox, QMessageBox,\
-                             QApplication,QHBoxLayout, QVBoxLayout)
+                             QApplication,QHBoxLayout, QVBoxLayout, QScrollArea)
 from PyQt5.QtGui import (QIcon)
-from PyQt5.QtCore import QDate, Qt
+from PyQt5.QtCore import QDate, Qt, pyqtSignal, pyqtSlot
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 
@@ -28,10 +28,11 @@ class Detekce(QMainWindow):
     """
     Popis
     """
+    column_save = pyqtSignal(int)
     def __init__(self):
         QMainWindow.__init__(self)
         super(Detekce, self).__init__()
-        self.data_send = SubWindow()
+        #self.data_send = SubWindow()
 
         self.column_count = None
         self.new_input_arary_reshaped = None
@@ -89,7 +90,7 @@ class Detekce(QMainWindow):
         self.popisky()
         self.combobox()
         self.lspeed()
-        self.selection_window()
+        self.selection_window_button()
         self.show()
 
     def new_selection(self):
@@ -126,7 +127,7 @@ class Detekce(QMainWindow):
             except Exception as ex:
                 print(ex)
         else:
-            print("not checked")
+            pass
 
     def check_box_one_save_main_file(self):
         """
@@ -157,7 +158,6 @@ class Detekce(QMainWindow):
         else:
             print("not checked")
 
-
     def combobox(self):
         """
         This object add items into combobox of filters
@@ -174,6 +174,8 @@ class Detekce(QMainWindow):
         self.combo_1.addItem("NLMS")
         self.combo_1.addItem("LMS")
         self.combo_1.addItem("LMF")
+        self.combo_1.addItem("GMCC")
+        self.combo_1.addItem("Llncosh")
         self.combo_1.setGeometry(550, 80, 130, 25)
         self.combo_2.addItem("Choose detection")
         self.combo_2.addItem("LE")
@@ -278,6 +280,10 @@ class Detekce(QMainWindow):
             self.filter_lms()
         elif filt == "LMF":
             self.filter_lmf()
+        elif filt == "GMCC":
+            self.filter_gmcc()
+        elif filt == "Llncosh":
+            self.filter_llncosh()
 
     def vyberdet(self):
         """
@@ -300,6 +306,16 @@ class Detekce(QMainWindow):
         self.statusBar()
         menubar = self.menuBar()
         file_menu = menubar.addMenu("&Filters")
+
+        llncosh = QAction(QIcon("WWW.jpg"), "llncosh", self)
+        llncosh.setShortcut("Ctrl+ll")
+        llncosh.setStatusTip("Last Llncosh (Llncosh)")
+        llncosh.triggered.connect(self.filter_llncosh)
+
+        gmcc = QAction(QIcon("WWW.jpg"), "GMCC", self)
+        gmcc.setShortcut("Ctrl+G")
+        gmcc.setStatusTip("Generalized maximum correntropy criterion (GMCC)")
+        gmcc.triggered.connect(self.filter_gmcc)
 
         sslms = QAction(QIcon("WWW.jpg"), "SSLMS", self)
         sslms.setShortcut("Ctrl+F")
@@ -346,6 +362,7 @@ class Detekce(QMainWindow):
         lmf.setStatusTip("Least-mean-fourth (LMF)")
         lmf.triggered.connect(self.filter_lmf)
 
+        file_menu.addAction(gmcc)
         file_menu.addAction(sslms)
         file_menu.addAction(rls)
         file_menu.addAction(ap_filter)
@@ -355,6 +372,7 @@ class Detekce(QMainWindow):
         file_menu.addAction(nlmf)
         file_menu.addAction(lms)
         file_menu.addAction(lmf)
+        file_menu.addAction(llncosh)
 
     def menu_detection(self):
         """
@@ -401,9 +419,6 @@ class Detekce(QMainWindow):
         labelfilename.setText("Filename")
         labelfilename.setGeometry(550, 275, 130, 25)
 
-        self.label_3.setText("Column selection")
-        self.label_3.setGeometry(550, 375, 128, 25)
-
     def statupgr(self):
         """
         Object which update statistic in label as text and again define label.
@@ -421,7 +436,7 @@ class Detekce(QMainWindow):
         variance_multiplied = 1000 * self.variance
         variance_back = (round(variance_multiplied)) / 1000
         variance_round = str(variance_back)
-        self.label_1.setText("Variance:" + variance_round)
+        self.label_1.setText("Var:" + variance_round)
         self.label_1.setStyleSheet("font-weight:bold")
         self.label_1.setStyleSheet("font-size: 10pt")
         self.setGeometry(QtCore.QRect(700, 40, 250, 50))
@@ -430,7 +445,7 @@ class Detekce(QMainWindow):
         deviation_multiplied = 1000 * self.standart_deviation
         deviation_back = (round(deviation_multiplied)) / 1000
         deviation_round = str(deviation_back)
-        self.label_2.setText("Standart deviation:" + deviation_round)
+        self.label_2.setText("Std:" + deviation_round)
         self.label_2.setStyleSheet("font-weight:bold")
         self.label_2.setStyleSheet("font-size: 10pt")
         self.setGeometry(QtCore.QRect(700, 40, 250, 50))
@@ -446,7 +461,6 @@ class Detekce(QMainWindow):
         self.standart_deviation = statistics.stdev(stlist)
         self.variance = statistics.variance(stlist)
 
-
     def label_one(self):
         """
         Object which define statistic labels for the first time.
@@ -459,14 +473,14 @@ class Detekce(QMainWindow):
         self.setGeometry(100, 100, 900, 580)
         self.label.update()
 
-        self.label_1.setText("Variance: None")
+        self.label_1.setText("Var: None")
         self.label_1.setStyleSheet("font-weight:bold")
         self.label_1.setStyleSheet("font-size: 10pt")
         self.label_1.setGeometry(QtCore.QRect(700, 60, 250, 50))
         self.setGeometry(100, 100, 900, 580)
         self.label_1.update()
 
-        self.label_2.setText("Standart deviation: None")
+        self.label_2.setText("Std: None")
         self.label_2.setStyleSheet("font-weight:bold")
         self.label_2.setStyleSheet("font-size: 10pt")
         self.label_2.setGeometry(QtCore.QRect(700, 80, 250, 50))
@@ -501,31 +515,36 @@ class Detekce(QMainWindow):
         In that object is open file with data and reorganize into matrix for analyze.
         :return: None
         """
-        basefile = str(Path.home())
-        jmeno = QFileDialog.getOpenFileName(self, "open file", basefile)
-        # hodnoty = open(jmeno[0], "r")
-        with open(jmeno[0], "r", encoding="utf-8") as hodnoty:
-            mat1 =(np.genfromtxt(hodnoty, delimiter=",", skip_header=0))
-        loading_matrix_shape = mat1.shape
-        self.column_count = loading_matrix_shape
-
-        if len(loading_matrix_shape) == 1:
-            loading_matrix_length = (loading_matrix_shape[0], 1)
-        else:
-            loading_matrix_length = loading_matrix_shape
-        self.table_widget.setRowCount(loading_matrix_length[0])
-        self.table_widget.setColumnCount(loading_matrix_length[1])
-        for i in range(0, loading_matrix_length[0]):
-            for j in range(0, loading_matrix_length[1]):
-                try:
-                    if len(loading_matrix_shape) == 1:
-                        self.table_widget.setItem(i, j, QTableWidgetItem(str(mat1[i])))
-                    else:
-                        self.table_widget.setItem(i, j, QTableWidgetItem(str(mat1[i, j])))
-                except Exception as ex:
-                    print(ex)
-        self.matrix_shape = loading_matrix_length
-        self.statusBar().showMessage("Files are loaded")
+        try:
+            basefile = str(Path.home())
+            jmeno = QFileDialog.getOpenFileName(self, "open file", basefile)
+            # hodnoty = open(jmeno[0], "r")
+            with open(jmeno[0], "r", encoding="utf-8") as hodnoty:
+                mat1 =(np.genfromtxt(hodnoty, delimiter=",", skip_header=0))
+            loading_matrix_shape = mat1.shape
+            try:
+                self.column_count = loading_matrix_shape[1]     # protože když otevřu csv s jednim sloupcem tak shape je (x,), a to nevezme.
+            except:
+                self.column_count = 1
+            if len(loading_matrix_shape) == 1:
+                loading_matrix_length = (loading_matrix_shape[0], 1)
+            else:
+                loading_matrix_length = loading_matrix_shape
+            self.table_widget.setRowCount(loading_matrix_length[0])
+            self.table_widget.setColumnCount(loading_matrix_length[1])
+            for i in range(0, loading_matrix_length[0]):
+                for j in range(0, loading_matrix_length[1]):
+                    try:
+                        if len(loading_matrix_shape) == 1:
+                            self.table_widget.setItem(i, j, QTableWidgetItem(str(mat1[i])))
+                        else:
+                            self.table_widget.setItem(i, j, QTableWidgetItem(str(mat1[i, j])))
+                    except Exception as ex:
+                        print(ex)
+            self.matrix_shape = loading_matrix_length
+            self.statusBar().showMessage("Files are loaded")
+        except Exception as ex:
+            print(ex)
 
     def vyber(self):
         """
@@ -605,7 +624,6 @@ class Detekce(QMainWindow):
         self.textbox1n.setGeometry(650, 250, 30, 25)
         self.textbox2.setGeometry(550, 300, 130, 25)
         self.textbox3.setGeometry(550, 200, 130, 25)
-        self.textbox4.setGeometry(550, 400, 130, 25)
         self.show()
 
     def saveparametrs(self):
@@ -655,6 +673,40 @@ class Detekce(QMainWindow):
         except Exception as ex:
             print(ex)
             self.learning_rate = 1
+
+    def filter_llncosh(self):
+        """
+               Filter procesing and values assignment
+               :return: None
+               """
+        self.uprava()
+        self.filter_name = "Llncosh"
+        try:
+            proces_file = pa.filters.FilterLlncosh(n=1, mu=self.learning_rate,lambd=0.1, w="zeros")
+            output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
+        except Exception as ex:
+            print(ex)
+        self.filter_output = output
+        self.filter_parametrs = weights
+        self.filter_error = error
+        self.statusBar().showMessage("Llncosh filter aplicated")
+
+    def filter_gmcc(self):
+        """
+        Filter procesing and values assignment
+        :return: None
+        """
+        self.uprava()
+        self.filter_name = "GMCC"
+        try:
+            proces_file = pa.filters.FilterGMCC(n=1, mu=self.learning_rate, w="zeros")
+            output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
+        except Exception as ex:
+            print(ex)
+        self.filter_output = output
+        self.filter_parametrs = weights
+        self.filter_error = error
+        self.statusBar().showMessage("GMCC filter aplicated")
 
     def filter_sslms(self):
         """
@@ -759,7 +811,6 @@ class Detekce(QMainWindow):
         self.filter_error = error
         self.statusBar().showMessage("GNGD filter aplicated")
 
-
     def filter_nlmf(self):
         """
         Filter procesing and values assignment
@@ -816,12 +867,15 @@ class Detekce(QMainWindow):
         Detection tool procesing and values assignment
         :return: None
         """
-        self.detection_name = "ELBND"
-        elbnd = pa.detection.ELBND(self.filter_parametrs, self.filter_error, function="max")
-        self.output_detection_tool = elbnd
-        self.statusBar().showMessage("ELBND detection aplicated")
-        self.statokno()
-        self.statupgr()
+        try:
+            self.detection_name = "ELBND"
+            elbnd = pa.detection.ELBND(self.filter_parametrs, self.filter_error, function="max")
+            self.output_detection_tool = elbnd
+            self.statusBar().showMessage("ELBND detection aplicated")
+            self.statokno()
+            self.statupgr()
+        except Exception as ex:
+            print(ex)
 
     def det_le(self):
         """
@@ -842,14 +896,17 @@ class Detekce(QMainWindow):
         Detection tool procesing and values assignment
         :return: None
         """
-
-        self.detection_name = "ESE"
-        ese = pa.detection.ESE(self.filter_parametrs)
-        self.output_detection_tool = ese
-        self.statusBar().showMessage("ELBND detection aplicated")
-        self.statokno()
-        self.statupgr()
-
+        try:
+            self.detection_name = "ESE"
+            print(self.filter_parametrs)
+            ese = pa.detection.ESE(self.filter_parametrs)
+            print("ojok")
+            self.output_detection_tool = ese
+            self.statusBar().showMessage("ELBND detection aplicated")
+            self.statokno()
+            self.statupgr()
+        except Exception as ex:
+            print(ex)
 
     def tabulka(self):
         """
@@ -905,28 +962,31 @@ class Detekce(QMainWindow):
         except Exception as ex:
             print(ex)
 
-    def var_send(self):
+    def selection_window_button(self):
         """
-        Object which send variables to second window
+        Object inicializing second window and emiting signal of input data to it.
         :return: None
         """
-        key_var = self.column_count
-        self.data_send.add_item(key_var)
-
-    def selection_window(self):
         # Button
         self.button = QPushButton(self)
-        self.button.setGeometry(850, 500, 50, 50)
-        self.button.setText('Main Window')
-        self.button.setStyleSheet('font-size:40px')
+        self.button.setGeometry(550, 140, 130, 25)
+        self.button.setText('Selection')
+        self.button.setStyleSheet('font-size:15px')
         self.button.show()
 
-        # Sub Window
-        self.sub_window = SubWindow()
-
         # Button Event
-        self.button.clicked.connect(self.var_send)
-        self.button.clicked.connect(self.sub_window.show)
+        self.button.clicked.connect(self.signal_beacon)
+
+    def signal_beacon(self):
+        """
+        Object emiting signal of input data to second window.
+        :return: None
+        """
+        # signal sending
+        signal = self.column_count
+        self.SubWindow = SubWindow(signal, self)
+        self.SubWindow.show()
+        self.column_save.connect(self.SubWindow.signal_reciever)
 
     def closeEvent(self, event):
         """
@@ -943,31 +1003,81 @@ class Detekce(QMainWindow):
             event.ignore()
 
 
-class SubWindow(QWidget):
-    def __init__(self):
+class SubWindow(QMainWindow):
+    def __init__(self, num_column, Detekce):
+        self.column_number = num_column
+        self.signal_1 = Detekce.column_save
+
         super(SubWindow, self).__init__()
-        self.resize(400, 300)
-        self.data_cache = None
+        self.setGeometry(1060, 100, 270, 580)
 
-        # Label
-        self.label = QLabel(self)
-        self.label.setGeometry(0, 0, 400, 300)
-        self.label.setText('Sub Window')
-        self.label.setAlignment(Qt.AlignCenter)
-        self.label.setStyleSheet('font-size:40px')
+        # signal value for checkboxes creation
+        self.signal_1.connect(self.signal_reciever)
 
-    def add_item(self, key_var):
-        self.data_cache = [key_var]
+        # global variables and lists
+        self.in_checkboxes = []
+        self.out_checkboxes = []
+        self.in_column_numbers = []
+        self.out_column_numbers = []
+
+        # other methods
         self.checkboxes()
+        self.column_selection_button()
+
+    def scroll_setup(self):
+        self.scroll = QScrollArea()
+        self.widget = QWidget()
+        self.vbox = QVBoxLayout()
+
+        # scroll area properties
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setWidget(self.widget)
+        self.setCentralWidget(self.scroll)
 
     def checkboxes(self):
-        print("anhah")
-        print(self.data_cache[0])
-        for i in range(0, 8):
-            box_name = "Column " + str(i)
-            self.dabox = QCheckBox(box_name, self)
-            self.dabox.setGeometry(10, 10 + i * 25, 100, 50)
-            self.dabox.show()
+        self.scroll_setup()
+
+        for i in range(0, self.column_number):
+            name = "in-col " + str(i)
+            checkbox_in = QCheckBox(name)
+            self.in_checkboxes.append(checkbox_in)
+            self.vbox.addWidget(checkbox_in)
+        self.widget.setLayout(self.vbox)
+
+        for i in range(0, self.column_number):
+            name = "out-col " + str(i)
+            checkbox_out = QCheckBox(name)
+            self.out_checkboxes.append(checkbox_out)
+            self.vbox.addWidget(checkbox_out)
+        self.widget.setLayout(self.vbox)
+
+    def signal_reciever(self, message):
+        self.column_count = message
+
+    def column_selection_button(self):
+        self.selection_button = QPushButton("Selection")
+        self.selection_button.setGeometry(1070, 600, 20, 20)
+        self.vbox.addWidget(self.selection_button)
+        self.selection_button.show()
+        self.selection_button.clicked.connect(self.column_selection)
+
+    def column_selection(self):
+        for i, checkbox in enumerate(self.in_checkboxes):
+            if checkbox.isChecked():
+                print("In {} Selected".format(i))
+                self.in_column_numbers.append(i)
+
+        for i, checkbox in enumerate(self.out_checkboxes):
+            if checkbox.isChecked():
+                print("Out {} Selected".format(i))
+                self.out_column_numbers.append(i)
+
+        print(self.in_column_numbers)
+        print(self.out_column_numbers)
+
+
 
 
 def main():
