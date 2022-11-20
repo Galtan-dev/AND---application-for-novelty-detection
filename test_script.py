@@ -1,7 +1,7 @@
 """
 GUI for adaptive filters testing.
 """
-import random
+
 import sys
 from pathlib import Path
 import statistics
@@ -10,9 +10,9 @@ import os
 from PyQt5.QtWidgets import (QMainWindow,QWidget, QComboBox, QPushButton,\
                              QAction, QLabel, QFileDialog, QTableWidgetItem,\
                              QLineEdit, QTableWidget, QCheckBox, QMessageBox,\
-                             QApplication,QHBoxLayout, QVBoxLayout, QScrollArea)
+                             QApplication, QVBoxLayout, QScrollArea)
 from PyQt5.QtGui import (QIcon)
-from PyQt5.QtCore import QDate, Qt, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 
@@ -28,12 +28,19 @@ class Detekce(QMainWindow):
     """
     Popis
     """
-    column_save = pyqtSignal(int)
     def __init__(self):
         QMainWindow.__init__(self)
         super(Detekce, self).__init__()
-        #self.data_send = SubWindow()
+        self.selected_columns = None
 
+        self.selection_window = SubWindow()
+        self.selection_window.signal_proces.connect(self.column_selection_holder_one)
+
+        self.num_of_parametrs = None
+        self.input_columns_filter = []
+        self.desired_columns_filter = []
+        self.loading_matrix_shape =None
+        self.loading_matrix = None
         self.column_count = None
         self.new_input_arary_reshaped = None
         self.testlist = None
@@ -65,8 +72,6 @@ class Detekce(QMainWindow):
 
         :return: None
         """
-        self.combo_1 = QComboBox(self)
-        self.combo_2 = QComboBox(self)
         self.label_1 = QtWidgets.QLabel(self)
         self.label = QtWidgets.QLabel(self)
         self.label_2 = QtWidgets.QLabel(self)
@@ -80,9 +85,10 @@ class Detekce(QMainWindow):
         self.textbox1 = QLineEdit(self)
         self.button_one = QPushButton("Intr.speed detection", self)
         self.button_two = QPushButton("One speed detection", self)
+        self.button_three = QPushButton("Test detection", self)
         self.box = QCheckBox("Save output", self)
         self.check_box_one()
-        self.setGeometry(100, 100, 900, 580)  # 700
+        self.setGeometry(100, 100, 700, 580)  # 700
         self.setWindowTitle("AND - Application for novelty detection")
         self.label_one()
         self.tabulka()
@@ -94,6 +100,10 @@ class Detekce(QMainWindow):
         self.show()
 
     def new_selection(self):
+        """
+        Object which create table of input matrix size
+        :return: None
+        """
         self.table_widget = QTableWidget()
         self.table_widget.setRowCount(4)
         self.table_widget.setColumnCount(4)
@@ -164,6 +174,8 @@ class Detekce(QMainWindow):
         so we can choose filter by another object
         :return: None
         """
+        self.combo_1 = QComboBox(self)
+        self.combo_2 = QComboBox(self)
         self.combo_1.addItem("Choose filter")
         self.combo_1.addItem("SSLMS")
         self.combo_1.addItem("RLS")
@@ -185,7 +197,7 @@ class Detekce(QMainWindow):
         self.button_one.setGeometry(550, 495, 130, 25)
         self.button_one.clicked.connect(self.node_2)
         self.button_two.setGeometry(550, 525, 130, 25)
-        self.button_two.clicked.connect(self.node_1)
+        self.button_two.clicked.connect(self.node_3)
 
     def multi_parametrs_save(self):
         """
@@ -203,20 +215,43 @@ class Detekce(QMainWindow):
                 filter_lenght_string = str(self.textbox3.text())
                 saved_parametrs = {"Learning rate": spn, "Filter length": \
                     filter_lenght_string, "Filter": self.filter_name, \
-                                   "Detection tool": self.detection_name, "Standart deviation": stdev, \
+                                   "Detection tool": self.detection_name,\
+                                   "Standart deviation": stdev, \
                                    "Variance": variance, "Mean": mean}
 
                 speed_label = str(self.label_savefig)
 
                 name_of_file = str(self.directory_3 + speed_label)
-                completeName = os.path.join(self.path_3, name_of_file + ".txt")
+                complete_name = os.path.join(self.path_3, name_of_file + ".txt")
 
                 saved_parametrs_string = repr(saved_parametrs)
-                file_parametrs = open(completeName,"w")
+                file_parametrs = open(complete_name,"w", encoding="utf-8")
                 file_parametrs.write(saved_parametrs_string)
                 file_parametrs.close()
         except Exception as ex:
             print(ex)
+
+    def node_3(self):
+        """
+        Node for selection of multiple columns, when you click
+        on that buton you start this node which refers
+        to individual objects
+        :return: None
+        """
+        self.lspeedchoose()
+        self.alter_vyber()
+        if self.num_of_parametrs == 0:
+            self.num_of_parametrs = 1
+            self.vyberfiltr()
+            self.vyberdet()
+            self.check_box_one_save()
+            self.grafy()
+        else:
+            self.vyberfiltr()
+            self.vyberdet()
+            self.check_box_one_save()
+            self.grafy()
+
 
     def node_2(self):
         """
@@ -231,30 +266,11 @@ class Detekce(QMainWindow):
 
         self.check_box_one_save_main_file()
 
-        for self.learning_rate in np.arange(bottom_interval,\
+        for self.learning_rate in np.arange(bottom_interval, \
                                             top_interval, step):
 
             self.label_savefig = round(self.learning_rate, 5)
-            self.vyber()
-            self.vyberfiltr()
-            self.vyberdet()
-            self.check_box_one_save()
-            self.multi_parametrs_save()
-            self.grafy()
-
-    def node_1(self):
-        """
-        Node for button one speed detection, when you click
-        on that buton you start this node which refers
-        to individual objects
-        :return: None
-        """
-        self.lspeedchoose()
-        self.vyber()
-        self.vyberfiltr()
-        self.vyberdet()
-        self.check_box_one_save()
-        self.grafy()
+            self.node_3()
 
     def vyberfiltr(self):
         """
@@ -430,8 +446,8 @@ class Detekce(QMainWindow):
         self.label.setText("Mean:" + mean_round)
         self.label.setStyleSheet("font-weight:bold")
         self.label.setStyleSheet("font-size: 10pt")
-        self.setGeometry(QtCore.QRect(700, 40, 250, 50))
-        self.setGeometry(100, 100, 900, 580)
+        self.setGeometry(QtCore.QRect(550, 40, 250, 750))
+        self.setGeometry(100, 100, 700, 580)
 
         variance_multiplied = 1000 * self.variance
         variance_back = (round(variance_multiplied)) / 1000
@@ -439,8 +455,8 @@ class Detekce(QMainWindow):
         self.label_1.setText("Var:" + variance_round)
         self.label_1.setStyleSheet("font-weight:bold")
         self.label_1.setStyleSheet("font-size: 10pt")
-        self.setGeometry(QtCore.QRect(700, 40, 250, 50))
-        self.setGeometry(100, 100, 900, 580)
+        self.setGeometry(QtCore.QRect(550, 40, 250, 765))
+        self.setGeometry(100, 100, 700, 580)
 
         deviation_multiplied = 1000 * self.standart_deviation
         deviation_back = (round(deviation_multiplied)) / 1000
@@ -448,8 +464,8 @@ class Detekce(QMainWindow):
         self.label_2.setText("Std:" + deviation_round)
         self.label_2.setStyleSheet("font-weight:bold")
         self.label_2.setStyleSheet("font-size: 10pt")
-        self.setGeometry(QtCore.QRect(700, 40, 250, 50))
-        self.setGeometry(100, 100, 900, 580)
+        self.setGeometry(QtCore.QRect(550, 40, 250, 785))
+        self.setGeometry(100, 100, 700, 580)
 
     def statokno(self):
         """
@@ -469,22 +485,22 @@ class Detekce(QMainWindow):
         self.label.setText("Mean: None")
         self.label.setStyleSheet("font-weight:bold")
         self.label.setStyleSheet("font-size: 10pt")
-        self.label.setGeometry(QtCore.QRect(700, 40, 250, 50))
-        self.setGeometry(100, 100, 900, 580)
+        self.label.setGeometry(QtCore.QRect(550, 40, 250, 750))
+        self.setGeometry(100, 100, 700, 700)
         self.label.update()
 
         self.label_1.setText("Var: None")
         self.label_1.setStyleSheet("font-weight:bold")
         self.label_1.setStyleSheet("font-size: 10pt")
-        self.label_1.setGeometry(QtCore.QRect(700, 60, 250, 50))
-        self.setGeometry(100, 100, 900, 580)
+        self.label_1.setGeometry(QtCore.QRect(550, 60, 250, 765))
+        self.setGeometry(100, 100, 700, 580)
         self.label_1.update()
 
         self.label_2.setText("Std: None")
         self.label_2.setStyleSheet("font-weight:bold")
         self.label_2.setStyleSheet("font-size: 10pt")
-        self.label_2.setGeometry(QtCore.QRect(700, 80, 250, 50))
-        self.setGeometry(100, 100, 900, 580)
+        self.label_2.setGeometry(QtCore.QRect(550, 80, 250, 785))
+        self.setGeometry(100, 100, 700, 580)
         self.label_2.update()
 
     def menugraf(self):
@@ -522,8 +538,10 @@ class Detekce(QMainWindow):
             with open(jmeno[0], "r", encoding="utf-8") as hodnoty:
                 mat1 =(np.genfromtxt(hodnoty, delimiter=",", skip_header=0))
             loading_matrix_shape = mat1.shape
+            self.loading_matrix_shape = mat1.shape[0]
+            self.loading_matrix = mat1
             try:
-                self.column_count = loading_matrix_shape[1]     # protože když otevřu csv s jednim sloupcem tak shape je (x,), a to nevezme.
+                self.column_count = loading_matrix_shape[1]
             except:
                 self.column_count = 1
             if len(loading_matrix_shape) == 1:
@@ -545,6 +563,56 @@ class Detekce(QMainWindow):
             self.statusBar().showMessage("Files are loaded")
         except Exception as ex:
             print(ex)
+
+    def alter_vyber(self):
+        count = self.selected_columns
+        self.num_of_parametrs = len(count[0])
+        if self.num_of_parametrs == 0:
+            try:
+                self.operational_matrix = []
+                self.input_columns_filter = []
+                self.desired_columns_filter = []
+                loading_matrix = self.loading_matrix
+                lenght_of_data = self.loading_matrix_shape
+                for i in range(0, lenght_of_data):
+                    self.operational_matrix.append(loading_matrix[i, count[1][0]])
+                for i in range(0, lenght_of_data-5):
+                    self.input_columns_filter.append(self.operational_matrix[i])
+                for i in range(5, lenght_of_data):
+                    self.desired_columns_filter.append(self.operational_matrix[i])
+                self.desired_columns_filter = np.reshape(self.desired_columns_filter,\
+                                                         [lenght_of_data-5, len(count[0])+1],
+                                                         order="F")
+                self.input_data = np.asarray(self.input_columns_filter)
+                self.input_desired_data = np.asarray(self.desired_columns_filter)
+            except Exception as ex:
+                print(ex)
+                for i in range(0, lenght_of_data):
+                    self.operational_matrix.append(loading_matrix[i])
+                for i in range(0, lenght_of_data - 5):
+                    self.input_columns_filter.append(self.operational_matrix[i])
+                for i in range(5, lenght_of_data):
+                    self.desired_columns_filter.append(self.operational_matrix[i])
+                self.desired_columns_filter = np.reshape(self.desired_columns_filter,
+                                                         [lenght_of_data - 5, len(count[0]) + 1],
+                                                         order="F")
+                self.input_data = np.asarray(self.input_columns_filter)
+                self.input_desired_data = np.asarray(self.desired_columns_filter)
+        else:
+            self.input_columns_filter = []
+            self.desired_columns_filter = []
+            loading_matrix = self.loading_matrix
+            lenght_of_data = self.loading_matrix_shape
+            for i in range(0, lenght_of_data):
+                self.input_columns_filter.append(loading_matrix[i, count[1][0]])
+            for j in range(0, len(count[0])):
+                for i in range(0, lenght_of_data):
+                    self.desired_columns_filter.append(loading_matrix[i, count[0][j]])
+            self.desired_columns_filter = np.reshape(self.desired_columns_filter,\
+                                                     [lenght_of_data, len(count[0])],
+                                                     order="F")
+            self.input_data = np.asarray(self.input_columns_filter)
+            self.input_desired_data = np.asarray(self.desired_columns_filter)
 
     def vyber(self):
         """
@@ -614,6 +682,9 @@ class Detekce(QMainWindow):
             self.input_desired_data = desired_data_in_progres.T
             self.input_data = input_data_in_progres.T
 
+        print(self.input_desired_data)
+        print(self.input_data)
+
     def lspeed(self):
         """
         Objcet which define textboxes.
@@ -639,10 +710,10 @@ class Detekce(QMainWindow):
             variance = str(self.variance)
             mean = str(self.mean)
             filter_lenght_string = str(self.textbox3.text())
-            saved_parametrs = {"Learning rate": spn, "Filter length":\
-                filter_lenght_string, "Filter": self.filter_name,\
-                   "Detection tool": self.detection_name, "Standart deviation": stdev,\
-                   "Variance": variance, "Mean": mean}
+            saved_parametrs = {"Learning rate": spn, "Filter length": \
+                filter_lenght_string, "Filter": self.filter_name, \
+                               "Detection tool": self.detection_name, "Standart deviation": stdev, \
+                               "Variance": variance, "Mean": mean}
             saved_parametrs_string=repr(saved_parametrs)
             write_parametrs = open(f"{name}.txt", "w+")
             write_parametrs.write(saved_parametrs_string)
@@ -650,11 +721,11 @@ class Detekce(QMainWindow):
             write_parametrs.close()
         except Exception as ex:
             print(ex)
-            saved_parametrs = {"Learning rate": self.learning_rate,\
-                               "Filter length": filter_lenght_string,\
-                   "Filter": self.filter_name,"Detection tool": self.detection_name,\
-                   "Standart deviation": stdev,\
-                   "Variance": variance, "Mean": mean}
+            saved_parametrs = {"Learning rate": self.learning_rate, \
+                               "Filter length": filter_lenght_string, \
+                               "Filter": self.filter_name,"Detection tool": self.detection_name, \
+                               "Standart deviation": stdev, \
+                               "Variance": variance, "Mean": mean}
             saved_parametrs_string = repr(saved_parametrs)
             #write_parametrs = open("Detection parametrs", "w+")
             with open("Detection parametrs", "w+", encoding="utf-8") as write_parametrs:
@@ -679,10 +750,10 @@ class Detekce(QMainWindow):
                Filter procesing and values assignment
                :return: None
                """
-        self.uprava()
         self.filter_name = "Llncosh"
         try:
-            proces_file = pa.filters.FilterLlncosh(n=1, mu=self.learning_rate,lambd=0.1, w="zeros")
+            proces_file = pa.filters.FilterLlncosh(n=self.num_of_parametrs,\
+                                                   mu=self.learning_rate,lambd=0.1, w="zeros")
             output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
@@ -696,10 +767,10 @@ class Detekce(QMainWindow):
         Filter procesing and values assignment
         :return: None
         """
-        self.uprava()
         self.filter_name = "GMCC"
         try:
-            proces_file = pa.filters.FilterGMCC(n=1, mu=self.learning_rate, w="zeros")
+            proces_file = pa.filters.FilterGMCC(n=self.num_of_parametrs,\
+                                                mu=self.learning_rate, w="zeros")
             output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
@@ -713,10 +784,10 @@ class Detekce(QMainWindow):
         Filter procesing and values assignment
         :return: None
         """
-        self.uprava()
         self.filter_name = "SSLMS"
         try:
-            proces_file = pa.filters.FilterSSLMS(n=1, mu=self.learning_rate, w="zeros")
+            proces_file = pa.filters.FilterSSLMS(n=self.num_of_parametrs,\
+                                                 mu=self.learning_rate, w="zeros")
             output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
@@ -730,10 +801,10 @@ class Detekce(QMainWindow):
         Filter procesing and values assignment
         :return: None
         """
-        self.uprava()
         self.filter_name = "RLS"
         try:
-            proces_file = pa.filters.FilterRLS(n=1, mu=self.learning_rate, w="zeros")
+            proces_file = pa.filters.FilterRLS(n=self.num_of_parametrs,\
+                                               mu=self.learning_rate, w="zeros")
             output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
@@ -747,10 +818,10 @@ class Detekce(QMainWindow):
         Filter procesing and values assignment
         :return: None
         """
-        self.uprava()
         self.filter_name = "NSSLMS"
         try:
-            proces_file = pa.filters.FilterNSSLMS(n=1, mu=self.learning_rate, w="zeros")
+            proces_file = pa.filters.FilterNSSLMS(n=self.num_of_parametrs,\
+                                                  mu=self.learning_rate, w="zeros")
             output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
@@ -764,10 +835,10 @@ class Detekce(QMainWindow):
         Filter procesing and values assignment
         :return: None
         """
-        self.uprava()
         self.filter_name = "AP"
         try:
-            proces_file = pa.filters.FilterAP(n=1, mu=self.learning_rate, w="zeros")
+            proces_file = pa.filters.FilterAP(n=self.num_of_parametrs,\
+                                              mu=self.learning_rate, w="zeros")
             output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
@@ -781,10 +852,10 @@ class Detekce(QMainWindow):
         Filter procesing and values assignment
         :return: None
         """
-        self.uprava()
         self.filter_name = "NLMS"
         try:
-            proces_file = pa.filters.FilterNLMS(n=1, mu=self.learning_rate, w="zeros")
+            proces_file = pa.filters.FilterNLMS(n=self.num_of_parametrs,\
+                                                mu=self.learning_rate, w="zeros")
             output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
@@ -793,18 +864,17 @@ class Detekce(QMainWindow):
         self.filter_error = error
         self.statusBar().showMessage("NLMS filter aplicated")
 
-    def filter_gngd(self):
+    def filter_gngd(self):                # mam prohozene vstupy a výstupy...
         """
         Filter procesing and values assignment
         :return: None
         """
-        self.uprava()
         self.filter_name = "GNGD"
         try:
-            proces_file = pa.filters.FilterGNGD(n=1, mu=self.learning_rate, w="random")
+            proces_file = pa.filters.FilterGNGD(n=self.num_of_parametrs,\
+                                                mu=self.learning_rate, w="random")
             output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
-            print("tady")
             print(ex)
         self.filter_output = output
         self.filter_parametrs = weights
@@ -816,10 +886,10 @@ class Detekce(QMainWindow):
         Filter procesing and values assignment
         :return: None
         """
-        self.uprava()
         self.filter_name = "NLMF"
         try:
-            proces_file = pa.filters.FilterNLMF(n=1, mu=self.learning_rate, w="zeros")
+            proces_file = pa.filters.FilterNLMF(n=self.num_of_parametrs,\
+                                                mu=self.learning_rate, w="zeros")
             output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
@@ -833,10 +903,10 @@ class Detekce(QMainWindow):
         Filter procesing and values assignment
         :return: None
         """
-        self.uprava()
         self.filter_name = "LMS"
         try:
-            proces_file = pa.filters.FilterLMS(n=1, mu=self.learning_rate, w="zeros")
+            proces_file = pa.filters.FilterLMS(n=self.num_of_parametrs,\
+                                               mu=self.learning_rate, w="zeros")
             output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
@@ -850,10 +920,10 @@ class Detekce(QMainWindow):
         Filter procesing and values assignment
         :return: None
         """
-        self.uprava()
         self.filter_name = "LMF"
         try:
-            proces_file = pa.filters.FilterLMF(n=1, mu=self.learning_rate, w="zeros")
+            proces_file = pa.filters.FilterLMF(n=self.num_of_parametrs,\
+                                               mu=self.learning_rate, w="zeros")
             output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
@@ -882,14 +952,20 @@ class Detekce(QMainWindow):
         Detection tool procesing and values assignment
         :return: None
         """
-        self.detection_name = "LE"
-        le_detection = pa.detection.learning_entropy(self.filter_parametrs, m=30, order=1)
-        det_le_matrix_shape = le_detection.shape
-        reshaped_output_matrix = np.reshape(le_detection, (det_le_matrix_shape[0],))
-        self.output_detection_tool = reshaped_output_matrix
-        self.statusBar().showMessage("LE detection aplicated")
-        self.statokno()
-        self.statupgr()
+        try:
+            self.detection_name = "LE"
+            print(self.filter_parametrs)
+            le_detection = pa.detection.learning_entropy(self.filter_parametrs, m=30, order=2)
+            det_le_matrix_shape = le_detection.shape
+            print(det_le_matrix_shape)
+            print(le_detection)
+            reshaped_output_matrix = np.reshape(le_detection, (det_le_matrix_shape[0],))
+            self.output_detection_tool = reshaped_output_matrix
+            self.statusBar().showMessage("LE detection aplicated")
+            self.statokno()
+            self.statupgr()
+        except Exception as ex:
+            print(ex)
 
     def det_ese(self):
         """
@@ -900,7 +976,6 @@ class Detekce(QMainWindow):
             self.detection_name = "ESE"
             print(self.filter_parametrs)
             ese = pa.detection.ESE(self.filter_parametrs)
-            print("ojok")
             self.output_detection_tool = ese
             self.statusBar().showMessage("ELBND detection aplicated")
             self.statokno()
@@ -975,18 +1050,22 @@ class Detekce(QMainWindow):
         self.button.show()
 
         # Button Event
-        self.button.clicked.connect(self.signal_beacon)
+        self.button.clicked.connect(self.column_number_list_update)
 
-    def signal_beacon(self):
+    def column_number_list_update(self):
         """
         Object emiting signal of input data to second window.
         :return: None
         """
-        # signal sending
-        signal = self.column_count
-        self.SubWindow = SubWindow(signal, self)
-        self.SubWindow.show()
-        self.column_save.connect(self.SubWindow.signal_reciever)
+        # variable passing
+        self.selection_window.column_number = self.column_count
+        self.selection_window.checkboxes()
+        self.selection_window.column_selection_button()
+        self.selection_window.show()
+
+    def column_selection_holder_one(self, data_one: list):
+        self.selected_columns = []
+        self.selected_columns = data_one
 
     def closeEvent(self, event):
         """
@@ -994,7 +1073,7 @@ class Detekce(QMainWindow):
         realy want close app.
         :return: None
         """
-        reply = QMessageBox.question(self, 'Window Close',\
+        reply = QMessageBox.question(self, 'Window Close', \
                                      'Are you sure you want to close the window?',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
@@ -1004,31 +1083,27 @@ class Detekce(QMainWindow):
 
 
 class SubWindow(QMainWindow):
-    def __init__(self, num_column, Detekce):
-        self.column_number = num_column
-        self.signal_1 = Detekce.column_save
-
-        super(SubWindow, self).__init__()
+    signal_proces = pyqtSignal(list)
+    def __init__(self):
+        super().__init__()
         self.setGeometry(1060, 100, 270, 580)
 
-        # signal value for checkboxes creation
-        self.signal_1.connect(self.signal_reciever)
+        # attribute definition
+        self.scroll = QScrollArea()
+        self.widget = QWidget()
+        self.vbox = QVBoxLayout()
 
         # global variables and lists
+        self.column_number = None
+        self.matrix_of_column_selection = []
         self.in_checkboxes = []
         self.out_checkboxes = []
         self.in_column_numbers = []
         self.out_column_numbers = []
 
         # other methods
-        self.checkboxes()
-        self.column_selection_button()
 
     def scroll_setup(self):
-        self.scroll = QScrollArea()
-        self.widget = QWidget()
-        self.vbox = QVBoxLayout()
-
         # scroll area properties
         self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -1040,21 +1115,18 @@ class SubWindow(QMainWindow):
         self.scroll_setup()
 
         for i in range(0, self.column_number):
-            name = "in-col " + str(i)
+            name = "target-col " + str(i)
             checkbox_in = QCheckBox(name)
             self.in_checkboxes.append(checkbox_in)
             self.vbox.addWidget(checkbox_in)
         self.widget.setLayout(self.vbox)
 
         for i in range(0, self.column_number):
-            name = "out-col " + str(i)
+            name = "in-col " + str(i)
             checkbox_out = QCheckBox(name)
             self.out_checkboxes.append(checkbox_out)
             self.vbox.addWidget(checkbox_out)
         self.widget.setLayout(self.vbox)
-
-    def signal_reciever(self, message):
-        self.column_count = message
 
     def column_selection_button(self):
         self.selection_button = QPushButton("Selection")
@@ -1062,23 +1134,22 @@ class SubWindow(QMainWindow):
         self.vbox.addWidget(self.selection_button)
         self.selection_button.show()
         self.selection_button.clicked.connect(self.column_selection)
+        self.selection_button.clicked.connect(self.signal_emit_back)
 
     def column_selection(self):
+        self.matrix_of_column_selection = []
+        self.out_column_numbers = []
+        self.in_column_numbers = []
         for i, checkbox in enumerate(self.in_checkboxes):
             if checkbox.isChecked():
-                print("In {} Selected".format(i))
                 self.in_column_numbers.append(i)
-
         for i, checkbox in enumerate(self.out_checkboxes):
             if checkbox.isChecked():
-                print("Out {} Selected".format(i))
                 self.out_column_numbers.append(i)
+        self.matrix_of_column_selection = [self.out_column_numbers, self.in_column_numbers]
 
-        print(self.in_column_numbers)
-        print(self.out_column_numbers)
-
-
-
+    def signal_emit_back(self):
+        self.signal_proces.emit(self.matrix_of_column_selection)
 
 def main():
     """
