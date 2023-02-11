@@ -63,6 +63,9 @@ class Detekce(QMainWindow):
         self.directory_3 = None
         self.parent_dir_3 = None
         self.label_savefig = None
+        self.mean_absolute_error = None
+        self.mena_squared_error = None
+        self.root_mean_square_error = None
         self.init_ui()
 
     def init_ui(self):
@@ -76,8 +79,11 @@ class Detekce(QMainWindow):
         self.label = QtWidgets.QLabel(self)
         self.label_2 = QtWidgets.QLabel(self)
         self.label_3 = QtWidgets.QLabel(self)
+        self.label_mae = QtWidgets.QLabel(self)
+        self.label_mse = QtWidgets.QLabel(self)
+        self.label_rmse = QtWidgets.QLabel(self)
         self.table_widget = QTableWidget(self)
-        self.textbox4 = QLineEdit(self)
+        # self.textbox4 = QLineEdit(self)
         self.textbox3 = QLineEdit(self)
         self.textbox2 = QLineEdit(self)
         self.textbox1n = QLineEdit(self)
@@ -85,7 +91,7 @@ class Detekce(QMainWindow):
         self.textbox1 = QLineEdit(self)
         self.button_one = QPushButton("Intr.speed detection", self)
         self.button_two = QPushButton("One speed detection", self)
-        self.button_three = QPushButton("Test detection", self)
+        # self.button_three = QPushButton("Test detection", self)
         self.box = QCheckBox("Save output", self)
         self.check_box_one()
         self.setGeometry(100, 100, 700, 580)  # 700
@@ -98,6 +104,16 @@ class Detekce(QMainWindow):
         self.lspeed()
         self.selection_window_button()
         self.show()
+
+    def error_evaluation(self):
+        """
+        Object which calculate filter error statistics
+        :return: None
+        """
+        self.mean_absolute_error = pa.misc.MAE(self.filter_error)
+        self.mena_squared_error = pa.misc.MSE(self.filter_error)
+        self.root_mean_square_error = pa.misc.RMSE(self.filter_error)
+        self.logarithmic_squared_error = pa.misc.logSE(self.filter_error)
 
     def new_selection(self):
         """
@@ -155,10 +171,12 @@ class Detekce(QMainWindow):
                 print(ex)
 
             list_files = os.listdir('C:\\Program Files (x86)\\Exp.files')
+
             self.directory_2 = str(len(list_files))
 
             parent_dir_2 = "C:\\Program Files (x86)\\Exp.files"
             path_2 = os.path.join(parent_dir_2, self.directory_2)
+
             try:
                 os.makedirs(path_2)
                 print("dir maked")
@@ -212,13 +230,22 @@ class Detekce(QMainWindow):
                 stdev = str(self.standart_deviation)
                 variance = str(self.variance)
                 mean = str(self.mean)
+
+                mae = str(self.mean_absolute_error)
+                mse = str(self.mena_squared_error)
+                rmse = str(self.root_mean_square_error)
+
                 filter_lenght_string = str(self.textbox3.text())
-                saved_parametrs = {"Learning rate": spn, "Filter length": \
-                    filter_lenght_string, "Filter": self.filter_name, \
+                saved_parametrs = {"Learning rate": spn,\
+                                   "Filter length": filter_lenght_string,\
+                                   "Filter": self.filter_name, \
                                    "Detection tool": self.detection_name,\
                                    "Standart deviation": stdev, \
-                                   "Variance": variance, "Mean": mean}
-
+                                   "Variance": variance,\
+                                   "Mean": mean,\
+                                   "Mean absolute error": mae,\
+                                   "Mean squared error": mse,\
+                                   "Root mean square error": rmse}
                 speed_label = str(self.label_savefig)
 
                 name_of_file = str(self.directory_3 + speed_label)
@@ -238,20 +265,31 @@ class Detekce(QMainWindow):
         to individual objects
         :return: None
         """
+        self.check_box_one_save_main_file()
+        self.main_node()
+
+    def main_node(self):
+        """
+        Main structure of node which is use in specialized nodes
+        :return: None
+        """
         self.lspeedchoose()
         self.alter_vyber()
         if self.num_of_parametrs == 0:
             self.num_of_parametrs = 1
             self.vyberfiltr()
+            self.error_evaluation()
             self.vyberdet()
             self.check_box_one_save()
+            self.multi_parametrs_save()
             self.grafy()
         else:
             self.vyberfiltr()
+            self.error_evaluation()
             self.vyberdet()
             self.check_box_one_save()
+            self.multi_parametrs_save()
             self.grafy()
-
 
     def node_2(self):
         """
@@ -270,7 +308,7 @@ class Detekce(QMainWindow):
                                             top_interval, step):
 
             self.label_savefig = round(self.learning_rate, 5)
-            self.node_3()
+            self.main_node()
 
     def vyberfiltr(self):
         """
@@ -446,7 +484,7 @@ class Detekce(QMainWindow):
         self.label.setText("Mean:" + mean_round)
         self.label.setStyleSheet("font-weight:bold")
         self.label.setStyleSheet("font-size: 10pt")
-        self.setGeometry(QtCore.QRect(550, 40, 250, 750))
+        self.setGeometry(QtCore.QRect(550, 40, 250, 710))
         self.setGeometry(100, 100, 700, 580)
 
         variance_multiplied = 1000 * self.variance
@@ -455,7 +493,7 @@ class Detekce(QMainWindow):
         self.label_1.setText("Var:" + variance_round)
         self.label_1.setStyleSheet("font-weight:bold")
         self.label_1.setStyleSheet("font-size: 10pt")
-        self.setGeometry(QtCore.QRect(550, 40, 250, 765))
+        self.setGeometry(QtCore.QRect(550, 40, 250, 715))
         self.setGeometry(100, 100, 700, 580)
 
         deviation_multiplied = 1000 * self.standart_deviation
@@ -464,8 +502,36 @@ class Detekce(QMainWindow):
         self.label_2.setText("Std:" + deviation_round)
         self.label_2.setStyleSheet("font-weight:bold")
         self.label_2.setStyleSheet("font-size: 10pt")
-        self.setGeometry(QtCore.QRect(550, 40, 250, 785))
+        self.setGeometry(QtCore.QRect(550, 40, 250, 704))
         self.setGeometry(100, 100, 700, 580)
+
+        mean_absolute_error_multiplied = 1000 * self.mean_absolute_error
+        mean_absolute_error_back = (round(mean_absolute_error_multiplied)) / 1000
+        mean_absolute_error_round = str(mean_absolute_error_back)
+        self.label_mae.setText("Std:" +  mean_absolute_error_round)
+        self.label_mae.setStyleSheet("font-weight:bold")
+        self.label_mae.setStyleSheet("font-size: 10pt")
+        self.setGeometry(QtCore.QRect(550, 40, 250, 740))
+        self.setGeometry(100, 100, 700, 580)
+
+        mena_squared_error_multiplied = 1000 * self.mena_squared_error
+        mena_squared_error_back = (round(mena_squared_error_multiplied)) / 1000
+        mena_squared_error_round = str(mena_squared_error_back)
+        self.label_mse.setText("Std:" + mena_squared_error_round)
+        self.label_mse.setStyleSheet("font-weight:bold")
+        self.label_mse.setStyleSheet("font-size: 10pt")
+        self.setGeometry(QtCore.QRect(550, 40, 250, 775))
+        self.setGeometry(100, 100, 700, 580)
+
+        root_mean_square_error_multiplied = 1000 * self.root_mean_square_error
+        root_mean_square_error_back = (round(root_mean_square_error_multiplied)) / 1000
+        root_mean_square_error_round = str(root_mean_square_error_back)
+        self.label_rmse.setText("Std:" + root_mean_square_error_round)
+        self.label_rmse.setStyleSheet("font-weight:bold")
+        self.label_rmse.setStyleSheet("font-size: 10pt")
+        self.setGeometry(QtCore.QRect(550, 40, 250, 810))
+        self.setGeometry(100, 100, 700, 580)
+
 
     def statokno(self):
         """
@@ -485,23 +551,44 @@ class Detekce(QMainWindow):
         self.label.setText("Mean: None")
         self.label.setStyleSheet("font-weight:bold")
         self.label.setStyleSheet("font-size: 10pt")
-        self.label.setGeometry(QtCore.QRect(550, 40, 250, 750))
+        self.label.setGeometry(QtCore.QRect(550, 40, 250, 715))
         self.setGeometry(100, 100, 700, 700)
         self.label.update()
 
         self.label_1.setText("Var: None")
         self.label_1.setStyleSheet("font-weight:bold")
         self.label_1.setStyleSheet("font-size: 10pt")
-        self.label_1.setGeometry(QtCore.QRect(550, 60, 250, 765))
+        self.label_1.setGeometry(QtCore.QRect(550, 60, 250, 710))
         self.setGeometry(100, 100, 700, 580)
         self.label_1.update()
 
         self.label_2.setText("Std: None")
         self.label_2.setStyleSheet("font-weight:bold")
         self.label_2.setStyleSheet("font-size: 10pt")
-        self.label_2.setGeometry(QtCore.QRect(550, 80, 250, 785))
+        self.label_2.setGeometry(QtCore.QRect(550, 80, 250, 704))
         self.setGeometry(100, 100, 700, 580)
         self.label_2.update()
+
+        self.label_mae.setText("Mae: None")
+        self.label_mae.setStyleSheet("font-weight:bold")
+        self.label_mae.setStyleSheet("font-size: 10pt")
+        self.label_mae.setGeometry(QtCore.QRect(550, 80, 250, 740))
+        self.setGeometry(100, 100, 700, 580)
+        self.label_mae.update()
+
+        self.label_mse.setText("Mse: None")
+        self.label_mse.setStyleSheet("font-weight:bold")
+        self.label_mse.setStyleSheet("font-size: 10pt")
+        self.label_mse.setGeometry(QtCore.QRect(550, 80, 250, 775))
+        self.setGeometry(100, 100, 700, 580)
+        self.label_mse.update()
+
+        self.label_rmse.setText("Rmse: None")
+        self.label_rmse.setStyleSheet("font-weight:bold")
+        self.label_rmse.setStyleSheet("font-size: 10pt")
+        self.label_rmse.setGeometry(QtCore.QRect(550, 80, 250, 810))
+        self.setGeometry(100, 100, 700, 580)
+        self.label_rmse.update()
 
     def menugraf(self):
         """
@@ -1087,6 +1174,7 @@ class SubWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setGeometry(1060, 100, 270, 580)
+        self.setWindowTitle("Selection")
 
         # attribute definition
         self.scroll = QScrollArea()
