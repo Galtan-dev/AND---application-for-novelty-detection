@@ -955,7 +955,7 @@ class Detekce(QMainWindow):
         :return: None
         """
         self.filter_name = "GNGD"
-
+        print("asdfasdfds")
         # qx = self.input_data.shape()
         # input = np.reshape(self.input_data, [qx[0],1], order="F")
         # print(self.num_of_parametrs)
@@ -1047,10 +1047,8 @@ class Detekce(QMainWindow):
         """
         try:
             self.detection_name = "LE"
-            le_detection = pa.detection.learning_entropy(self.filter_parametrs, m=50, order=1)
-            det_le_matrix_shape = le_detection.shape
-            reshaped_output_matrix = np.reshape(le_detection, (det_le_matrix_shape[0],))
-            self.output_detection_tool = reshaped_output_matrix
+            le_detection = pa.detection.learning_entropy(self.filter_parametrs, m=50, order=2, alpha=[8., 9., 10., 11., 12., 13.])
+            self.output_detection_tool = le_detection
             self.statusBar().showMessage("LE detection aplicated")
             self.statokno()
             self.statupgr()
@@ -1087,11 +1085,25 @@ class Detekce(QMainWindow):
         and output from detection tool.
         :return: None
         """
+
+        # fig, axs = plt.subplots(2, 1)
+        # axs[0].plot(self.input_desired_data)
+        # axs[1].plot(self.output_detection_tool)
+        # axs[0].set_title("Vstupní data po high-pass filtru")
+        # axs[1].set_title("Výstup z algoritmu")
+        # axs[0].set_ylabel("$[-]$")
+        # axs[1].set_ylabel("$det[-]$")
+        # axs[0].set_xlabel("$t[s]$")
+        # axs[1].set_xlabel("$[-]$")
+        # axs[0].grid(True)
+        # axs[1].grid(True)
+
         fig, axs = plt.subplots(4, 1)
         axs[0].plot(self.filter_error)
         axs[1].plot(self.filter_output)
         axs[2].plot(self.filter_parametrs)
         axs[3].plot(self.output_detection_tool)
+        # axs[4].plot(self.input_desired_data)
 
         axs[0].set_title("Filter error for every sample")
         axs[1].set_title("Output value")

@@ -266,6 +266,7 @@ class Detekce(QMainWindow):
         :return: None
         """
         self.check_box_one_save_main_file()
+        self.lspeedchoose()
         self.main_node()
 
     def main_node(self):
@@ -273,23 +274,25 @@ class Detekce(QMainWindow):
         Main structure of node which is use in specialized nodes
         :return: None
         """
-        self.lspeedchoose()
-        self.alter_vyber()
-        if self.num_of_parametrs == 0:
-            self.num_of_parametrs = 1
-            self.vyberfiltr()
-            self.error_evaluation()
-            self.vyberdet()
-            self.check_box_one_save()
-            self.multi_parametrs_save()
-            self.grafy()
-        else:
-            self.vyberfiltr()
-            self.error_evaluation()
-            self.vyberdet()
-            self.check_box_one_save()
-            self.multi_parametrs_save()
-            self.grafy()
+        try:
+            self.alter_vyber()
+            if self.num_of_parametrs == 0:
+                self.num_of_parametrs = 1
+                self.vyberfiltr()
+                self.error_evaluation()
+                self.vyberdet()
+                self.check_box_one_save()
+                self.multi_parametrs_save()
+                self.grafy()
+            else:
+                self.vyberfiltr()
+                self.error_evaluation()
+                self.vyberdet()
+                self.check_box_one_save()
+                self.multi_parametrs_save()
+                self.grafy()
+        except Exception as ex:
+            print(ex)
 
     def node_2(self):
         """
@@ -301,14 +304,14 @@ class Detekce(QMainWindow):
         bottom_interval = float(self.textbox1.text())
         top_interval = float(self.textbox1s.text())
         step = float(self.textbox1n.text())
-
-        self.check_box_one_save_main_file()
-
-        for self.learning_rate in np.arange(bottom_interval, \
-                                            top_interval, step):
-
-            self.label_savefig = round(self.learning_rate, 5)
-            self.main_node()
+        try:
+            self.check_box_one_save_main_file()
+            for self.learning_rate in np.arange(bottom_interval, \
+                                                top_interval, step):
+                self.label_savefig = round(self.learning_rate, 5)
+                self.main_node()
+        except Exception as ex:
+            print(ex)
 
     def vyberfiltr(self):
         """
@@ -750,9 +753,6 @@ class Detekce(QMainWindow):
             self.input_desired_data = desired_data_in_progres.T
             self.input_data = input_data_in_progres.T
 
-            print(self.input_desired_data)
-            print(self.input_data)
-
         except Exception as ex:
             print(ex)
             trans_matrix = self.transposed_matrix
@@ -768,9 +768,6 @@ class Detekce(QMainWindow):
             input_data_in_progres = np.asarray([input_data_begining])
             self.input_desired_data = desired_data_in_progres.T
             self.input_data = input_data_in_progres.T
-
-        print(self.input_desired_data)
-        print(self.input_data)
 
     def lspeed(self):
         """
@@ -830,6 +827,7 @@ class Detekce(QMainWindow):
             self.learning_rate = speedvalue
         except Exception as ex:
             print(ex)
+
             self.learning_rate = 1
 
     def filter_llncosh(self):
@@ -957,9 +955,17 @@ class Detekce(QMainWindow):
         :return: None
         """
         self.filter_name = "GNGD"
+
+        # qx = self.input_data.shape()
+        # input = np.reshape(self.input_data, [qx[0],1], order="F")
+        # print(self.num_of_parametrs)
+        # print(self.learning_rate)
+        # print(self.input_data)
+        # print(self.input_desired_data)
+
         try:
-            proces_file = pa.filters.FilterGNGD(n=self.num_of_parametrs,\
-                                                mu=self.learning_rate, w="random")
+            proces_file = pa.filters.FilterGNGD(n=self.num_of_parametrs,
+                                                mu=self.learning_rate, w="zeros")
             output, error, weights = proces_file.run(self.input_data, self.input_desired_data)
         except Exception as ex:
             print(ex)
@@ -1041,11 +1047,8 @@ class Detekce(QMainWindow):
         """
         try:
             self.detection_name = "LE"
-            print(self.filter_parametrs)
-            le_detection = pa.detection.learning_entropy(self.filter_parametrs, m=30, order=2)
+            le_detection = pa.detection.learning_entropy(self.filter_parametrs, m=50, order=1)
             det_le_matrix_shape = le_detection.shape
-            print(det_le_matrix_shape)
-            print(le_detection)
             reshaped_output_matrix = np.reshape(le_detection, (det_le_matrix_shape[0],))
             self.output_detection_tool = reshaped_output_matrix
             self.statusBar().showMessage("LE detection aplicated")
@@ -1061,7 +1064,6 @@ class Detekce(QMainWindow):
         """
         try:
             self.detection_name = "ESE"
-            print(self.filter_parametrs)
             ese = pa.detection.ESE(self.filter_parametrs)
             self.output_detection_tool = ese
             self.statusBar().showMessage("ELBND detection aplicated")
